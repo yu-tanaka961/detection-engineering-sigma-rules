@@ -6,293 +6,65 @@ Cross-source unified Sigma rules for threat detection, built by aggregating and 
 
 ```
 detection-engineering-sigma-rules/
-├── rules/
-│   ├── t1059_001_powershell/       # MITRE ATT&CK T1059.001
-│   │   ├── tier1_base64_encoded_powershell.yml
-│   │   ├── tier1_susp_parameter_combination.yml
-│   │   ├── tier1_download_execute_pattern.yml
-│   │   ├── tier2_suspicious_parent_process.yml
-│   │   ├── tier2_amsi_bypass_attempt.yml
-│   │   └── tier2_scriptblock_malicious_cmdlets.yml
-│   ├── t1003_006_dcsync/           # MITRE ATT&CK T1003.006
-│   │   ├── tier1_dcsync_replication_rights.yml
-│   │   ├── tier1_dcsync_tool_execution.yml
-│   │   ├── tier2_dcsync_scriptblock.yml
-│   │   ├── tier2_dcsync_network_drsuapi.yml
-│   │   └── tier2_dcsync_permission_delegation.yml
-│   ├── t1190_exploit_public_facing/  # MITRE ATT&CK T1190
-│   │   ├── tier1_webserver_suspicious_child_process.yml
-│   │   ├── tier1_webshell_file_creation.yml
-│   │   └── tier2_known_exploit_indicators.yml
-│   ├── t1133_external_remote_services/ # MITRE ATT&CK T1133
-│   │   ├── tier1_rdp_bruteforce_logon_failure.yml
-│   │   ├── tier1_rdp_logon_from_public_ip.yml
-│   │   └── tier2_vpn_suspicious_logon_pattern.yml
-│   ├── t1078_valid_accounts/         # MITRE ATT&CK T1078
-│   │   ├── tier1_multiple_failed_then_success.yml
-│   │   ├── tier1_dormant_account_logon.yml
-│   │   └── tier2_admin_logon_anomaly.yml
-│   ├── t1566_001_spearphishing_attachment/ # MITRE ATT&CK T1566.001
-│   │   ├── tier1_office_suspicious_child_process.yml
-│   │   ├── tier1_office_macro_execution_indicators.yml
-│   │   └── tier2_suspicious_attachment_file_write.yml
-│   ├── t1078_004_cloud_accounts/     # MITRE ATT&CK T1078.004
-│   │   ├── tier1_cloud_impossible_travel.yml
-│   │   ├── tier1_cloud_mfa_fatigue_attack.yml
-│   │   └── tier2_cloud_suspicious_service_principal.yml
-│   ├── t1059_003_windows_command_shell/ # MITRE ATT&CK T1059.003
-│   │   ├── tier1_cmd_suspicious_execution_pattern.yml
-│   │   ├── tier1_cmd_spawned_by_suspicious_parent.yml
-│   │   └── tier2_cmd_obfuscation_techniques.yml
-│   ├── t1204_002_malicious_file/     # MITRE ATT&CK T1204.002
-│   │   ├── tier1_suspicious_file_execution_from_user_dir.yml
-│   │   ├── tier1_iso_img_vhd_mount_execution.yml
-│   │   └── tier2_lnk_file_suspicious_target.yml
-│   ├── t1569_002_service_execution/  # MITRE ATT&CK T1569.002
-│   │   ├── tier1_suspicious_service_installation.yml
-│   │   ├── tier1_sc_exe_service_creation.yml
-│   │   └── tier2_service_execution_from_unusual_process.yml
-│   ├── t1053_005_scheduled_task/     # MITRE ATT&CK T1053.005
-│   │   ├── tier1_schtasks_suspicious_creation.yml
-│   │   ├── tier1_taskscheduler_event_suspicious.yml
-│   │   └── tier2_schtasks_remote_creation.yml
-│   ├── t1047_wmi/                    # MITRE ATT&CK T1047
-│   │   ├── tier1_wmic_suspicious_execution.yml
-│   │   ├── tier1_wmiprvse_suspicious_child.yml
-│   │   └── tier2_wmi_event_subscription_persistence.yml
-│   ├── t1543_003_windows_service_persistence/ # MITRE ATT&CK T1543.003
-│   │   ├── tier1_service_registry_modification.yml
-│   │   ├── tier1_new_service_in_suspicious_location.yml
-│   │   └── tier2_service_dll_hijack.yml
-│   ├── t1547_001_registry_run_keys/  # MITRE ATT&CK T1547.001
-│   │   ├── tier1_registry_run_key_modification.yml
-│   │   ├── tier1_startup_folder_file_creation.yml
-│   │   └── tier2_registry_run_key_via_unusual_process.yml
-│   ├── t1136_001_local_account/      # MITRE ATT&CK T1136.001
-│   │   ├── tier1_local_account_creation.yml
-│   │   ├── tier1_local_account_event_log.yml
-│   │   └── tier2_hidden_account_creation.yml
-│   ├── t1197_bits_jobs/              # MITRE ATT&CK T1197
-│   │   ├── tier1_bitsadmin_suspicious_usage.yml
-│   │   ├── tier1_bits_persistence_via_notify.yml
-│   │   └── tier2_bits_unusual_job_creation.yml
-│   ├── t1068_exploitation_privilege_escalation/ # MITRE ATT&CK T1068
-│   │   ├── tier1_suspicious_process_token_elevation.yml
-│   │   ├── tier1_known_exploit_tool_execution.yml
-│   │   └── tier2_vulnerable_driver_load.yml
-│   ├── t1134_access_token_manipulation/ # MITRE ATT&CK T1134
-│   │   ├── tier1_token_impersonation_tools.yml
-│   │   ├── tier1_suspicious_process_token_change.yml
-│   │   └── tier2_parent_pid_spoofing.yml
-│   ├── t1546_011_application_shimming/ # MITRE ATT&CK T1546.011
-│   │   ├── tier1_sdbinst_shim_installation.yml
-│   │   ├── tier1_shim_database_registry_modification.yml
-│   │   └── tier2_sdb_file_creation_suspicious.yml
-│   ├── t1070_004_file_deletion/       # MITRE ATT&CK T1070.004
-│   │   ├── tier1_suspicious_file_deletion_tools.yml
-│   │   ├── tier1_event_log_cleared.yml
-│   │   └── tier2_timestomp_file_time_modification.yml
-│   ├── t1027_obfuscated_files/        # MITRE ATT&CK T1027
-│   │   ├── tier1_suspicious_encoded_content.yml
-│   │   ├── tier1_double_extension_or_rtlo.yml
-│   │   └── tier2_scriptblock_deobfuscation_indicators.yml
-│   ├── t1218_system_binary_proxy_execution/ # MITRE ATT&CK T1218
-│   │   ├── tier1_mshta_suspicious_execution.yml
-│   │   ├── tier1_cmstp_msiexec_proxy_execution.yml
-│   │   └── tier2_lolbin_unusual_network_connection.yml
-│   ├── t1218_011_rundll32/            # MITRE ATT&CK T1218.011
-│   │   ├── tier1_rundll32_suspicious_execution.yml
-│   │   ├── tier1_rundll32_suspicious_dll_path.yml
-│   │   └── tier2_rundll32_abnormal_parent_or_network.yml
-│   ├── t1140_deobfuscate_decode/      # MITRE ATT&CK T1140
-│   │   ├── tier1_certutil_decode_operations.yml
-│   │   ├── tier1_powershell_decode_and_execute.yml
-│   │   └── tier2_compiled_html_or_xsl_decode.yml
-│   ├── t1685_disable_modify_tools/    # MITRE ATT&CK T1685 (旧T1562.001)
-│   │   ├── tier1_security_tool_service_disabled.yml
-│   │   ├── tier1_windows_defender_registry_tamper.yml
-│   │   └── tier2_etw_or_amsi_tampering.yml
-│   ├── t1003_001_lsass_memory/        # MITRE ATT&CK T1003.001
-│   │   ├── tier1_lsass_memory_access_suspicious.yml
-│   │   ├── tier1_credential_dumping_tool_execution.yml
-│   │   └── tier2_lsass_dump_file_creation.yml
-│   ├── t1558_003_kerberoasting/       # MITRE ATT&CK T1558.003
-│   │   ├── tier1_kerberos_tgs_request_anomaly.yml
-│   │   ├── tier1_kerberoasting_tool_execution.yml
-│   │   └── tier2_kerberos_rc4_downgrade.yml
-│   ├── t1555_credentials_from_password_stores/ # MITRE ATT&CK T1555
-│   │   ├── tier1_browser_credential_access.yml
-│   │   ├── tier1_credential_manager_access.yml
-│   │   └── tier2_dpapi_masterkey_access.yml
-│   ├── t1552_001_credentials_in_files/ # MITRE ATT&CK T1552.001
-│   │   ├── tier1_sensitive_file_search_commands.yml
-│   │   ├── tier1_unattend_xml_access.yml
-│   │   └── tier2_ssh_key_or_config_file_access.yml
-│   ├── t1003_002_sam_database/        # MITRE ATT&CK T1003.002
-│   │   ├── tier1_sam_registry_hive_export.yml
-│   │   ├── tier1_sam_dump_tool_execution.yml
-│   │   └── tier2_sam_file_copy_from_disk.yml
-│   ├── t1003_003_ntds/                # MITRE ATT&CK T1003.003
-│   │   ├── tier1_ntdsutil_credential_dump.yml
-│   │   ├── tier1_ntds_file_access_suspicious.yml
-│   │   └── tier2_ntds_dump_file_creation.yml
-│   ├── t1557_001_llmnr_nbtns_poisoning/ # MITRE ATT&CK T1557.001
-│   │   ├── tier1_responder_tool_execution.yml
-│   │   ├── tier1_llmnr_nbtns_config_change.yml
-│   │   └── tier2_smb_ntlm_relay_indicators.yml
-│   ├── t1552_006_gpp_credentials/     # MITRE ATT&CK T1552.006
-│   │   ├── tier1_gpp_password_discovery.yml
-│   │   ├── tier1_sysvol_gpp_file_access.yml
-│   │   └── tier2_gpp_cpassword_decryption.yml
-│   ├── t1649_steal_forge_certificates/ # MITRE ATT&CK T1649
-│   │   ├── tier1_certutil_certificate_export.yml
-│   │   ├── tier1_adcs_abuse_tool_execution.yml
-│   │   └── tier2_adcs_certificate_template_abuse.yml
-│   ├── t1558_001_golden_ticket/       # MITRE ATT&CK T1558.001
-│   │   ├── tier1_krbtgt_hash_extraction_tools.yml
-│   │   ├── tier1_golden_ticket_usage_anomaly.yml
-│   │   └── tier2_golden_ticket_scriptblock.yml
-│   ├── t1134_t1558_unconstrained_delegation/ # T1134/T1558 Unconstrained Delegation
-│   │   ├── tier1_unconstrained_delegation_enumeration.yml
-│   │   ├── tier1_tgt_extraction_from_delegation.yml
-│   │   └── tier2_delegation_coercion_attack.yml
-│   ├── t1018_remote_system_discovery/  # MITRE ATT&CK T1018
-│   │   ├── tier1_network_scanning_commands.yml
-│   │   ├── tier1_ad_computer_enumeration.yml
-│   │   └── tier2_network_scanner_tool_execution.yml
-│   ├── t1087_002_domain_account_discovery/ # MITRE ATT&CK T1087.002
-│   │   ├── tier1_net_domain_user_enumeration.yml
-│   │   ├── tier1_ad_user_enumeration_powershell.yml
-│   │   └── tier2_privileged_account_targeted_enumeration.yml
-│   ├── t1482_domain_trust_discovery/   # MITRE ATT&CK T1482
-│   │   ├── tier1_domain_trust_enumeration_commands.yml
-│   │   ├── tier1_domain_trust_powershell_enumeration.yml
-│   │   └── tier2_cross_domain_trust_abuse_indicators.yml
-│   ├── t1033_system_owner_user_discovery/ # MITRE ATT&CK T1033
-│   │   ├── tier1_whoami_system_info_commands.yml
-│   │   ├── tier1_environment_variable_user_discovery.yml
-│   │   └── tier2_rapid_recon_command_sequence.yml
-│   ├── t1087_001_local_account_discovery/ # MITRE ATT&CK T1087.001
-│   │   ├── tier1_local_account_enumeration_commands.yml
-│   │   ├── tier1_local_account_powershell_enumeration.yml
-│   │   └── tier2_local_admin_targeted_enumeration.yml
-│   ├── t1083_file_and_directory_discovery/ # MITRE ATT&CK T1083
-│   │   ├── tier1_suspicious_directory_listing_commands.yml
-│   │   ├── tier1_share_and_network_drive_enumeration.yml
-│   │   └── tier2_sensitive_file_discovery_scriptblock.yml
-│   ├── t1021_002_smb_windows_admin_shares/ # MITRE ATT&CK T1021.002
-│   │   ├── tier1_psexec_smb_lateral_movement.yml
-│   │   ├── tier1_admin_share_access_suspicious.yml
-│   │   └── tier2_smb_lateral_movement_service_install.yml
-│   ├── t1021_001_remote_desktop_protocol/ # MITRE ATT&CK T1021.001
-│   │   ├── tier1_rdp_suspicious_connection.yml
-│   │   ├── tier1_rdp_session_hijacking.yml
-│   │   └── tier2_rdp_registry_and_firewall_modification.yml
-│   ├── t1570_lateral_tool_transfer/    # MITRE ATT&CK T1570
-│   │   ├── tier1_lateral_file_copy_commands.yml
-│   │   ├── tier1_smb_executable_file_write.yml
-│   │   └── tier2_lateral_transfer_via_wmi_or_winrm.yml
-│   ├── t1550_002_pass_the_hash/        # MITRE ATT&CK T1550.002
-│   │   ├── tier1_pth_tool_execution.yml
-│   │   ├── tier1_ntlm_logon_anomaly.yml
-│   │   └── tier2_pth_process_creation_anomaly.yml
-│   ├── t1560_archive_collected_data/    # MITRE ATT&CK T1560
-│   │   ├── tier1_archive_tool_suspicious_execution.yml
-│   │   ├── tier1_powershell_compress_archive.yml
-│   │   └── tier2_large_archive_creation_exfil_staging.yml
-│   ├── t1071_001_web_protocols/         # MITRE ATT&CK T1071.001
-│   │   ├── tier1_suspicious_http_c2_patterns.yml
-│   │   ├── tier1_known_c2_framework_indicators.yml
-│   │   └── tier2_suspicious_outbound_connection_lolbin.yml
-│   ├── t1219_remote_access_software/    # MITRE ATT&CK T1219
-│   │   ├── tier1_remote_access_tool_execution.yml
-│   │   ├── tier1_rat_network_connection.yml
-│   │   └── tier2_rat_silent_install_or_portable.yml
-│   ├── t1572_protocol_tunneling/        # MITRE ATT&CK T1572
-│   │   ├── tier1_ssh_tunnel_suspicious_execution.yml
-│   │   ├── tier1_dns_tunnel_indicators.yml
-│   │   └── tier2_tunnel_network_connection_anomaly.yml
-│   ├── t1090_proxy/                     # MITRE ATT&CK T1090
-│   │   ├── tier1_proxy_tool_execution.yml
-│   │   ├── tier1_web_shell_proxy_traffic.yml
-│   │   └── tier2_multi_hop_proxy_indicators.yml
-│   ├── t1105_ingress_tool_transfer/     # MITRE ATT&CK T1105
-│   │   ├── tier1_remote_file_download_tools.yml
-│   │   ├── tier1_file_download_from_external_ip.yml
-│   │   └── tier2_tool_transfer_network_connection.yml
-│   ├── t1567_002_exfil_to_cloud_storage/ # MITRE ATT&CK T1567.002
-│   │   ├── tier1_cloud_storage_upload_commands.yml
-│   │   ├── tier1_browser_bulk_upload_to_cloud.yml
-│   │   └── tier2_rclone_config_or_renamed_execution.yml
-│   ├── t1486_data_encrypted_for_impact/  # MITRE ATT&CK T1486
-│   │   ├── tier1_ransomware_file_extension_change.yml
-│   │   ├── tier1_ransomware_encryption_tool_execution.yml
-│   │   └── tier2_ransomware_behavioral_indicators.yml
-│   ├── t1490_inhibit_system_recovery/    # MITRE ATT&CK T1490
-│   │   ├── tier1_vssadmin_shadow_delete.yml
-│   │   ├── tier1_bcdedit_recovery_disable.yml
-│   │   └── tier2_multiple_recovery_inhibition_commands.yml
-│   └── t1489_service_stop/               # MITRE ATT&CK T1489
-│       ├── tier1_critical_service_stop_commands.yml
-│       ├── tier1_powershell_service_stop.yml
-│       └── tier2_mass_service_stop_sequence.yml
-└── docs/
-    ├── t1059_001_cross_source_analysis.md
-    ├── t1003_006_cross_source_analysis.md
-    ├── t1190_cross_source_analysis.md
-    ├── t1133_cross_source_analysis.md
-    ├── t1078_cross_source_analysis.md
-    ├── t1566_001_cross_source_analysis.md
-    ├── t1078_004_cross_source_analysis.md
-    ├── t1059_003_cross_source_analysis.md
-    ├── t1204_002_cross_source_analysis.md
-    ├── t1569_002_cross_source_analysis.md
-    ├── t1053_005_cross_source_analysis.md
-    ├── t1047_cross_source_analysis.md
-    ├── t1543_003_cross_source_analysis.md
-    ├── t1547_001_cross_source_analysis.md
-    ├── t1136_001_cross_source_analysis.md
-    ├── t1197_cross_source_analysis.md
-    ├── t1068_cross_source_analysis.md
-    ├── t1134_cross_source_analysis.md
-    ├── t1546_011_cross_source_analysis.md
-    ├── t1070_004_cross_source_analysis.md
-    ├── t1027_cross_source_analysis.md
-    ├── t1218_cross_source_analysis.md
-    ├── t1218_011_cross_source_analysis.md
-    ├── t1140_cross_source_analysis.md
-    ├── t1685_cross_source_analysis.md
-    ├── t1003_001_cross_source_analysis.md
-    ├── t1558_003_cross_source_analysis.md
-    ├── t1555_cross_source_analysis.md
-    ├── t1552_001_cross_source_analysis.md
-    ├── t1003_002_cross_source_analysis.md
-    ├── t1003_003_cross_source_analysis.md
-    ├── t1557_001_cross_source_analysis.md
-    ├── t1552_006_cross_source_analysis.md
-    ├── t1649_cross_source_analysis.md
-    ├── t1558_001_cross_source_analysis.md
-    ├── t1134_t1558_unconstrained_delegation_cross_source_analysis.md
-    ├── t1018_cross_source_analysis.md
-    ├── t1087_002_cross_source_analysis.md
-    ├── t1482_cross_source_analysis.md
-    ├── t1033_cross_source_analysis.md
-    ├── t1087_001_cross_source_analysis.md
-    ├── t1083_cross_source_analysis.md
-    ├── t1021_002_cross_source_analysis.md
-    ├── t1021_001_cross_source_analysis.md
-    ├── t1570_cross_source_analysis.md
-    ├── t1550_002_cross_source_analysis.md
-    ├── t1560_cross_source_analysis.md
-    ├── t1071_001_cross_source_analysis.md
-    ├── t1219_cross_source_analysis.md
-    ├── t1572_cross_source_analysis.md
-    ├── t1090_cross_source_analysis.md
-    ├── t1105_cross_source_analysis.md
-    ├── t1567_002_cross_source_analysis.md
-    ├── t1486_cross_source_analysis.md
-    ├── t1490_cross_source_analysis.md
-    └── t1489_cross_source_analysis.md
+├── rules/                          # Sigma detection rules (YAML)
+│   ├── t1003_001_lsass_memory/
+│   ├── t1003_002_sam_database/
+│   ├── t1003_003_ntds/
+│   ├── t1003_006_dcsync/
+│   ├── t1018_remote_system_discovery/
+│   ├── t1021_001_remote_desktop_protocol/
+│   ├── t1021_002_smb_windows_admin_shares/
+│   ├── t1027_obfuscated_files/
+│   ├── t1033_system_owner_user_discovery/
+│   ├── t1047_wmi/
+│   ├── t1053_005_scheduled_task/
+│   ├── t1059_001_powershell/
+│   ├── t1059_003_windows_command_shell/
+│   ├── t1068_exploitation_privilege_escalation/
+│   ├── t1070_004_file_deletion/
+│   ├── t1071_001_web_protocols/
+│   ├── t1078_valid_accounts/
+│   ├── t1078_004_cloud_accounts/
+│   ├── t1083_file_and_directory_discovery/
+│   ├── t1087_001_local_account_discovery/
+│   ├── t1087_002_domain_account_discovery/
+│   ├── t1090_proxy/
+│   ├── t1105_ingress_tool_transfer/
+│   ├── t1133_external_remote_services/
+│   ├── t1134_access_token_manipulation/
+│   ├── t1134_t1558_unconstrained_delegation/
+│   ├── t1136_001_local_account/
+│   ├── t1140_deobfuscate_decode/
+│   ├── t1190_exploit_public_facing/
+│   ├── t1197_bits_jobs/
+│   ├── t1204_002_malicious_file/
+│   ├── t1218_system_binary_proxy_execution/
+│   ├── t1218_011_rundll32/
+│   ├── t1219_remote_access_software/
+│   ├── t1482_domain_trust_discovery/
+│   ├── t1486_data_encrypted_for_impact/
+│   ├── t1489_service_stop/
+│   ├── t1490_inhibit_system_recovery/
+│   ├── t1543_003_windows_service_persistence/
+│   ├── t1546_011_application_shimming/
+│   ├── t1547_001_registry_run_keys/
+│   ├── t1550_002_pass_the_hash/
+│   ├── t1552_001_credentials_in_files/
+│   ├── t1552_006_gpp_credentials/
+│   ├── t1555_credentials_from_password_stores/
+│   ├── t1557_001_llmnr_nbtns_poisoning/
+│   ├── t1558_001_golden_ticket/
+│   ├── t1558_003_kerberoasting/
+│   ├── t1560_archive_collected_data/
+│   ├── t1566_001_spearphishing_attachment/
+│   ├── t1567_002_exfil_to_cloud_storage/
+│   ├── t1569_002_service_execution/
+│   ├── t1570_lateral_tool_transfer/
+│   ├── t1572_protocol_tunneling/
+│   ├── t1649_steal_forge_certificates/
+│   └── t1685_disable_modify_tools/
+└── docs/                           # Cross-source analysis (per technique)
+    └── t{XXXX}_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -922,123 +694,8 @@ Rules use extended tags to encode detection quality dimensions:
 
 ## References
 
-- [MITRE ATT&CK T1059.001](https://attack.mitre.org/techniques/T1059/001/)
-- [MITRE ATT&CK T1003.006](https://attack.mitre.org/techniques/T1003/006/)
-- [MITRE ATT&CK T1190](https://attack.mitre.org/techniques/T1190/)
-- [MITRE ATT&CK T1133](https://attack.mitre.org/techniques/T1133/)
-- [MITRE ATT&CK T1078](https://attack.mitre.org/techniques/T1078/)
-- [MITRE ATT&CK T1566.001](https://attack.mitre.org/techniques/T1566/001/)
-- [MITRE ATT&CK T1078.004](https://attack.mitre.org/techniques/T1078/004/)
-- [MITRE ATT&CK T1059.003](https://attack.mitre.org/techniques/T1059/003/)
-- [MITRE ATT&CK T1204.002](https://attack.mitre.org/techniques/T1204/002/)
-- [MITRE ATT&CK T1569.002](https://attack.mitre.org/techniques/T1569/002/)
-- [MITRE ATT&CK T1053.005](https://attack.mitre.org/techniques/T1053/005/)
-- [MITRE ATT&CK T1047](https://attack.mitre.org/techniques/T1047/)
-- [MITRE ATT&CK T1543.003](https://attack.mitre.org/techniques/T1543/003/)
-- [MITRE ATT&CK T1547.001](https://attack.mitre.org/techniques/T1547/001/)
-- [MITRE ATT&CK T1136.001](https://attack.mitre.org/techniques/T1136/001/)
-- [MITRE ATT&CK T1197](https://attack.mitre.org/techniques/T1197/)
-- [MITRE ATT&CK T1068](https://attack.mitre.org/techniques/T1068/)
-- [MITRE ATT&CK T1134](https://attack.mitre.org/techniques/T1134/)
-- [MITRE ATT&CK T1546.011](https://attack.mitre.org/techniques/T1546/011/)
-- [MITRE ATT&CK T1070.004](https://attack.mitre.org/techniques/T1070/004/)
-- [MITRE ATT&CK T1027](https://attack.mitre.org/techniques/T1027/)
-- [MITRE ATT&CK T1218](https://attack.mitre.org/techniques/T1218/)
-- [MITRE ATT&CK T1218.011](https://attack.mitre.org/techniques/T1218/011/)
-- [MITRE ATT&CK T1140](https://attack.mitre.org/techniques/T1140/)
-- [MITRE ATT&CK T1685](https://attack.mitre.org/techniques/T1685/)
-- [MITRE ATT&CK T1003.001](https://attack.mitre.org/techniques/T1003/001/)
-- [MITRE ATT&CK T1558.003](https://attack.mitre.org/techniques/T1558/003/)
-- [MITRE ATT&CK T1555](https://attack.mitre.org/techniques/T1555/)
-- [MITRE ATT&CK T1552.001](https://attack.mitre.org/techniques/T1552/001/)
-- [MITRE ATT&CK T1003.002](https://attack.mitre.org/techniques/T1003/002/)
-- [MITRE ATT&CK T1003.003](https://attack.mitre.org/techniques/T1003/003/)
-- [MITRE ATT&CK T1557.001](https://attack.mitre.org/techniques/T1557/001/)
-- [MITRE ATT&CK T1552.006](https://attack.mitre.org/techniques/T1552/006/)
-- [MITRE ATT&CK T1649](https://attack.mitre.org/techniques/T1649/)
-- [MITRE ATT&CK T1558.001](https://attack.mitre.org/techniques/T1558/001/)
-- [MITRE ATT&CK T1134](https://attack.mitre.org/techniques/T1134/)
-- [MITRE ATT&CK T1018](https://attack.mitre.org/techniques/T1018/)
-- [MITRE ATT&CK T1087.002](https://attack.mitre.org/techniques/T1087/002/)
-- [MITRE ATT&CK T1482](https://attack.mitre.org/techniques/T1482/)
-- [MITRE ATT&CK T1033](https://attack.mitre.org/techniques/T1033/)
-- [MITRE ATT&CK T1087.001](https://attack.mitre.org/techniques/T1087/001/)
-- [MITRE ATT&CK T1083](https://attack.mitre.org/techniques/T1083/)
-- [MITRE ATT&CK T1021.002](https://attack.mitre.org/techniques/T1021/002/)
-- [MITRE ATT&CK T1021.001](https://attack.mitre.org/techniques/T1021/001/)
-- [MITRE ATT&CK T1570](https://attack.mitre.org/techniques/T1570/)
-- [MITRE ATT&CK T1550.002](https://attack.mitre.org/techniques/T1550/002/)
-- [MITRE ATT&CK T1560](https://attack.mitre.org/techniques/T1560/)
-- [MITRE ATT&CK T1071.001](https://attack.mitre.org/techniques/T1071/001/)
-- [MITRE ATT&CK T1219](https://attack.mitre.org/techniques/T1219/)
-- [MITRE ATT&CK T1572](https://attack.mitre.org/techniques/T1572/)
-- [MITRE ATT&CK T1090](https://attack.mitre.org/techniques/T1090/)
-- [MITRE ATT&CK T1105](https://attack.mitre.org/techniques/T1105/)
-- [MITRE ATT&CK T1567.002](https://attack.mitre.org/techniques/T1567/002/)
-- [MITRE ATT&CK T1486](https://attack.mitre.org/techniques/T1486/)
-- [MITRE ATT&CK T1490](https://attack.mitre.org/techniques/T1490/)
-- [MITRE ATT&CK T1489](https://attack.mitre.org/techniques/T1489/)
+- [MITRE ATT&CK](https://attack.mitre.org/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
 - [Azure Sentinel Detections](https://github.com/Azure/Azure-Sentinel)
-- [T1059.001 Cross-source analysis](docs/t1059_001_cross_source_analysis.md)
-- [T1003.006 Cross-source analysis](docs/t1003_006_cross_source_analysis.md)
-- [T1190 Cross-source analysis](docs/t1190_cross_source_analysis.md)
-- [T1133 Cross-source analysis](docs/t1133_cross_source_analysis.md)
-- [T1078 Cross-source analysis](docs/t1078_cross_source_analysis.md)
-- [T1566.001 Cross-source analysis](docs/t1566_001_cross_source_analysis.md)
-- [T1078.004 Cross-source analysis](docs/t1078_004_cross_source_analysis.md)
-- [T1059.003 Cross-source analysis](docs/t1059_003_cross_source_analysis.md)
-- [T1204.002 Cross-source analysis](docs/t1204_002_cross_source_analysis.md)
-- [T1569.002 Cross-source analysis](docs/t1569_002_cross_source_analysis.md)
-- [T1053.005 Cross-source analysis](docs/t1053_005_cross_source_analysis.md)
-- [T1047 Cross-source analysis](docs/t1047_cross_source_analysis.md)
-- [T1543.003 Cross-source analysis](docs/t1543_003_cross_source_analysis.md)
-- [T1547.001 Cross-source analysis](docs/t1547_001_cross_source_analysis.md)
-- [T1136.001 Cross-source analysis](docs/t1136_001_cross_source_analysis.md)
-- [T1197 Cross-source analysis](docs/t1197_cross_source_analysis.md)
-- [T1068 Cross-source analysis](docs/t1068_cross_source_analysis.md)
-- [T1134 Cross-source analysis](docs/t1134_cross_source_analysis.md)
-- [T1546.011 Cross-source analysis](docs/t1546_011_cross_source_analysis.md)
-- [T1070.004 Cross-source analysis](docs/t1070_004_cross_source_analysis.md)
-- [T1027 Cross-source analysis](docs/t1027_cross_source_analysis.md)
-- [T1218 Cross-source analysis](docs/t1218_cross_source_analysis.md)
-- [T1218.011 Cross-source analysis](docs/t1218_011_cross_source_analysis.md)
-- [T1140 Cross-source analysis](docs/t1140_cross_source_analysis.md)
-- [T1685 Cross-source analysis](docs/t1685_cross_source_analysis.md)
-- [T1003.001 Cross-source analysis](docs/t1003_001_cross_source_analysis.md)
-- [T1558.003 Cross-source analysis](docs/t1558_003_cross_source_analysis.md)
-- [T1555 Cross-source analysis](docs/t1555_cross_source_analysis.md)
-- [T1552.001 Cross-source analysis](docs/t1552_001_cross_source_analysis.md)
-- [T1003.002 Cross-source analysis](docs/t1003_002_cross_source_analysis.md)
-- [T1003.003 Cross-source analysis](docs/t1003_003_cross_source_analysis.md)
-- [T1557.001 Cross-source analysis](docs/t1557_001_cross_source_analysis.md)
-- [T1552.006 Cross-source analysis](docs/t1552_006_cross_source_analysis.md)
-- [T1649 Cross-source analysis](docs/t1649_cross_source_analysis.md)
-- [T1558.001 Cross-source analysis](docs/t1558_001_cross_source_analysis.md)
-- [T1134/T1558 Unconstrained Delegation Cross-source analysis](docs/t1134_t1558_unconstrained_delegation_cross_source_analysis.md)
-- [T1018 Cross-source analysis](docs/t1018_cross_source_analysis.md)
-- [T1087.002 Cross-source analysis](docs/t1087_002_cross_source_analysis.md)
-- [T1482 Cross-source analysis](docs/t1482_cross_source_analysis.md)
-- [T1033 Cross-source analysis](docs/t1033_cross_source_analysis.md)
-- [T1087.001 Cross-source analysis](docs/t1087_001_cross_source_analysis.md)
-- [T1083 Cross-source analysis](docs/t1083_cross_source_analysis.md)
-- [T1021.002 Cross-source analysis](docs/t1021_002_cross_source_analysis.md)
-- [T1021.001 Cross-source analysis](docs/t1021_001_cross_source_analysis.md)
-- [T1570 Cross-source analysis](docs/t1570_cross_source_analysis.md)
-- [T1550.002 Cross-source analysis](docs/t1550_002_cross_source_analysis.md)
-- [T1560 Cross-source analysis](docs/t1560_cross_source_analysis.md)
-- [T1071.001 Cross-source analysis](docs/t1071_001_cross_source_analysis.md)
-- [T1219 Cross-source analysis](docs/t1219_cross_source_analysis.md)
-- [T1572 Cross-source analysis](docs/t1572_cross_source_analysis.md)
-- [T1090 Cross-source analysis](docs/t1090_cross_source_analysis.md)
-- [T1105 Cross-source analysis](docs/t1105_cross_source_analysis.md)
-- [T1567.002 Cross-source analysis](docs/t1567_002_cross_source_analysis.md)
-- [T1486 Cross-source analysis](docs/t1486_cross_source_analysis.md)
-- [T1490 Cross-source analysis](docs/t1490_cross_source_analysis.md)
-- [T1489 Cross-source analysis](docs/t1489_cross_source_analysis.md)
-
-## Author
-
-Yuhei Tanaka
