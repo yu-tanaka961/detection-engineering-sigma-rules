@@ -1,0 +1,82 @@
+title: Protocol Tunneling Network Connection Anomaly
+id: f7c3d9a1-1572-4de0-b8c7-unified-t1572003
+related:
+  - id: elastic-tunnel-network
+    type: derived
+  - id: splunk-tunnel-detection
+    type: derived
+status: experimental
+description: |
+  Detects anomalous network connections from tunneling tools via Sysmon EventID 3.
+  Monitors for SSH connections on non-standard ports, reverse tunnel indicators,
+  and connections from portable tunnel binaries to external addresses.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1572/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.command_and_control
+  - attack.t1572
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: network_connection
+  product: windows
+detection:
+  selection_tunnel_tool_network:
+    Image|endswith:
+      - '\chisel.exe'
+      - '\ngrok.exe'
+      - '\ligolo.exe'
+      - '\gost.exe'
+      - '\frpc.exe'
+      - '\iox.exe'
+      - '\socat.exe'
+    Initiated: 'true'
+  selection_ssh_non_standard:
+    Image|endswith:
+      - '\ssh.exe'
+      - '\plink.exe'
+    Initiated: 'true'
+  filter_ssh_standard:
+    DestinationPort: 22
+  selection_reverse_tunnel:
+    Image|endswith:
+      - '\ssh.exe'
+      - '\plink.exe'
+    DestinationPort:
+      - 443
+      - 8443
+      - 8080
+    Initiated: 'true'
+  filter_local:
+    DestinationIp|startswith:
+      - '10.'
+      - '172.16.'
+      - '172.17.'
+      - '172.18.'
+      - '172.19.'
+      - '172.20.'
+      - '172.21.'
+      - '172.22.'
+      - '172.23.'
+      - '172.24.'
+      - '172.25.'
+      - '172.26.'
+      - '172.27.'
+      - '172.28.'
+      - '172.29.'
+      - '172.30.'
+      - '172.31.'
+      - '192.168.'
+      - '127.'
+  condition: (selection_tunnel_tool_network and not filter_local) or (selection_ssh_non_standard and not filter_ssh_standard and not filter_local) or (selection_reverse_tunnel and not filter_local)
+falsepositives:
+  - Legitimate SSH connections to cloud services
+  - VPN tools using non-standard ports
+level: high

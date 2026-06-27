@@ -1,0 +1,62 @@
+title: Multi-Hop Proxy and Traffic Pivoting Indicators
+id: f7c3d9a1-1090-4de0-b8c7-unified-t1090003
+related:
+  - id: elastic-multi-hop-proxy
+    type: derived
+  - id: splunk-proxy-chain
+    type: derived
+status: experimental
+description: |
+  Detects indicators of multi-hop proxy configurations and traffic pivoting,
+  including Tor usage, multiple netsh portproxy rules, and proxy chain
+  configurations. Attackers use multi-hop proxies to obscure C2 traffic origin.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1090/003/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.command_and_control
+  - attack.t1090
+  - attack.t1090.003
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_tor:
+    Image|endswith:
+      - '\tor.exe'
+      - '\Tor\tor.exe'
+  selection_tor_indicators:
+    CommandLine|contains:
+      - 'SocksPort 9050'
+      - 'ControlPort'
+      - 'torrc'
+      - '--tor'
+      - 'UseBridges'
+  selection_proxy_chain_config:
+    CommandLine|contains:
+      - 'proxychains'
+      - 'proxychains4'
+      - '-proxychains'
+  selection_meek:
+    CommandLine|contains:
+      - 'meek-client'
+      - 'obfs4proxy'
+      - 'snowflake-client'
+  selection_multi_portproxy:
+    Image|endswith: '\netsh.exe'
+    CommandLine|contains:
+      - 'portproxy'
+      - 'connectaddress'
+  condition: selection_tor or selection_tor_indicators or selection_proxy_chain_config or selection_meek or selection_multi_portproxy
+falsepositives:
+  - Legitimate Tor usage for privacy
+  - VPN tools with proxy chain features
+level: high

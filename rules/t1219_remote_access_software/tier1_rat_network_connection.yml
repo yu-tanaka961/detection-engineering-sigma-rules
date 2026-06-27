@@ -1,0 +1,57 @@
+title: Remote Access Tool Network Connection to Relay Servers
+id: f7c3d9a1-1219-4de0-b8c7-unified-t1219002
+related:
+  - id: sigmahq-rat-network
+    type: derived
+  - id: elastic-rat-connection
+    type: derived
+status: experimental
+description: |
+  Detects network connections from remote access tools to their relay/rendezvous
+  servers. Monitors Sysmon EventID 3 for connections to known RAT infrastructure
+  domains and ports.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1219/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.command_and_control
+  - attack.t1219
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: network_connection
+  product: windows
+detection:
+  selection_anydesk_ports:
+    DestinationPort:
+      - 6568
+      - 7070
+    Initiated: 'true'
+  selection_teamviewer_ports:
+    DestinationPort:
+      - 5938
+    Initiated: 'true'
+  selection_screenconnect_process:
+    Image|endswith:
+      - '\ScreenConnect.ClientService.exe'
+      - '\ScreenConnect.WindowsClient.exe'
+    Initiated: 'true'
+  selection_ngrok:
+    Image|endswith: '\ngrok.exe'
+    Initiated: 'true'
+  selection_rustdesk:
+    Image|endswith: '\rustdesk.exe'
+    DestinationPort:
+      - 21116
+      - 21117
+    Initiated: 'true'
+  condition: selection_anydesk_ports or selection_teamviewer_ports or selection_screenconnect_process or selection_ngrok or selection_rustdesk
+falsepositives:
+  - Legitimate remote access tool usage
+level: medium

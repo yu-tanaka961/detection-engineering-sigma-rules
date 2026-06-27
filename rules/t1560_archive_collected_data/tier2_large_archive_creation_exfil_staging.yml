@@ -1,0 +1,57 @@
+title: Large Archive Creation in Staging Directories (Exfiltration Preparation)
+id: f7c3d9a1-1560-4de0-b8c7-unified-t1560003
+related:
+  - id: elastic-archive-staging
+    type: derived
+  - id: splunk-exfil-staging
+    type: derived
+status: experimental
+description: |
+  Detects creation of archive files in common staging directories (Temp, ProgramData,
+  Public) which may indicate data collection for exfiltration. Also monitors for
+  archive creation via ScriptBlock with sensitive file patterns.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1560/
+  - https://attack.mitre.org/techniques/T1074/001/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.collection
+  - attack.exfiltration
+  - attack.t1560
+  - attack.t1074.001
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: file_event
+  product: windows
+detection:
+  selection_staging_archive:
+    TargetFilename|contains:
+      - '\Temp\\'
+      - '\ProgramData\\'
+      - '\Public\\'
+      - '\AppData\\Local\\Temp'
+    TargetFilename|endswith:
+      - '.zip'
+      - '.rar'
+      - '.7z'
+      - '.tar'
+      - '.tar.gz'
+      - '.cab'
+  filter_legitimate:
+    Image|endswith:
+      - '\msiexec.exe'
+      - '\TiWorker.exe'
+      - '\svchost.exe'
+      - '\MsMpEng.exe'
+  condition: selection_staging_archive and not filter_legitimate
+falsepositives:
+  - Legitimate software installation creating temporary archives
+  - Backup tools writing to temp directories
+level: high

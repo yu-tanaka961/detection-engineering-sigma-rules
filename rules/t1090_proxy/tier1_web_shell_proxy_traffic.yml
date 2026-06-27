@@ -1,0 +1,63 @@
+title: Web Shell Proxy and Traffic Relay Indicators
+id: f7c3d9a1-1090-4de0-b8c7-unified-t1090002
+related:
+  - id: elastic-webshell-proxy
+    type: derived
+  - id: splunk-web-proxy-tunnel
+    type: derived
+status: experimental
+description: |
+  Detects web shell-based proxy tools including reGeorg, NeoReGeorg, ABPTTS,
+  and similar web shell tunneling frameworks. These are deployed as web shells
+  that act as SOCKS proxies, relaying traffic through web servers.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1090/
+  - https://github.com/sensepost/reGeorg
+  - https://github.com/L-codes/Neo-reGeorg
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.command_and_control
+  - attack.t1090
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: file_event
+  product: windows
+detection:
+  selection_webshell_proxy:
+    TargetFilename|endswith:
+      - '\tunnel.aspx'
+      - '\tunnel.ashx'
+      - '\tunnel.jsp'
+      - '\tunnel.php'
+      - '\reGeorg.aspx'
+      - '\neo.aspx'
+  selection_webshell_paths:
+    TargetFilename|contains:
+      - '\inetpub\wwwroot'
+      - '\wwwroot\\'
+      - '\htdocs\\'
+      - '\webapps\\'
+    TargetFilename|endswith:
+      - '.aspx'
+      - '.ashx'
+      - '.jsp'
+      - '.jspx'
+      - '.php'
+  selection_proxy_content:
+    TargetFilename|contains:
+      - 'reGeorg'
+      - 'NeoReGeorg'
+      - 'ABPTTS'
+      - 'tunna'
+      - 'pivotnacci'
+  condition: selection_webshell_proxy or selection_proxy_content
+falsepositives:
+  - Legitimate web application deployment
+level: critical

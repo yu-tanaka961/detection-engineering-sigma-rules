@@ -1,0 +1,73 @@
+title: SSH/Protocol Tunnel Tool Execution
+id: f7c3d9a1-1572-4de0-b8c7-unified-t1572001
+related:
+  - id: sigmahq-ssh-tunnel
+    type: derived
+  - id: elastic-protocol-tunneling
+    type: derived
+status: experimental
+description: |
+  Detects execution of protocol tunneling tools including SSH port forwarding,
+  plink, chisel, ngrok, and socat. Attackers tunnel traffic through encrypted
+  channels to bypass network security controls.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1572/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.command_and_control
+  - attack.t1572
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_ssh_tunnel:
+    Image|endswith:
+      - '\ssh.exe'
+      - '\plink.exe'
+    CommandLine|contains:
+      - '-L '
+      - '-R '
+      - '-D '
+      - '-N '
+      - '-f '
+  selection_chisel:
+    CommandLine|contains:
+      - 'chisel'
+      - 'Chisel'
+    CommandLine|contains:
+      - 'client'
+      - 'server'
+  selection_ngrok:
+    Image|endswith: '\ngrok.exe'
+    CommandLine|contains:
+      - 'tcp'
+      - 'http'
+      - 'start'
+  selection_tunnel_tools:
+    Image|endswith:
+      - '\socat.exe'
+      - '\ncat.exe'
+      - '\netcat.exe'
+      - '\nc.exe'
+      - '\ligolo.exe'
+      - '\gost.exe'
+      - '\frpc.exe'
+      - '\iox.exe'
+  selection_netsh_portproxy:
+    Image|endswith: '\netsh.exe'
+    CommandLine|contains:
+      - 'interface portproxy'
+      - 'add v4tov4'
+  condition: selection_ssh_tunnel or selection_chisel or selection_ngrok or selection_tunnel_tools or selection_netsh_portproxy
+falsepositives:
+  - Legitimate SSH tunneling by administrators
+  - Development tools using ngrok for testing
+level: high

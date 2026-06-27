@@ -1,0 +1,65 @@
+title: Remote Access Tool Silent Installation or Portable Execution
+id: f7c3d9a1-1219-4de0-b8c7-unified-t1219003
+related:
+  - id: elastic-rat-silent-install
+    type: derived
+  - id: splunk-rat-portable
+    type: derived
+status: experimental
+description: |
+  Detects suspicious RAT behavior including silent/unattended installation,
+  execution from temporary or unusual directories, and portable RAT execution
+  without proper installation. These patterns are characteristic of attacker
+  deployment rather than legitimate IT use.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1219/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.command_and_control
+  - attack.persistence
+  - attack.t1219
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_rat_from_temp:
+    Image|contains:
+      - '\Temp\\'
+      - '\Downloads\\'
+      - '\AppData\\Local\\Temp'
+      - '\ProgramData\\'
+      - '\Public\\'
+    Image|endswith:
+      - '\AnyDesk.exe'
+      - '\TeamViewer.exe'
+      - '\ScreenConnect.ClientService.exe'
+      - '\RustDesk.exe'
+  selection_anydesk_password:
+    Image|endswith: '\AnyDesk.exe'
+    CommandLine|contains:
+      - '--set-password'
+      - '--get-id'
+  selection_rat_renamed:
+    OriginalFileName|contains:
+      - 'AnyDesk'
+      - 'TeamViewer'
+      - 'ScreenConnect'
+    Image|endswith:
+      - '.exe'
+  filter_rat_normal_path:
+    Image|contains:
+      - '\Program Files'
+      - '\AnyDesk\\'
+      - '\TeamViewer\\'
+  condition: selection_rat_from_temp or selection_anydesk_password or (selection_rat_renamed and not filter_rat_normal_path)
+falsepositives:
+  - Portable remote access tools used by IT staff
+level: high

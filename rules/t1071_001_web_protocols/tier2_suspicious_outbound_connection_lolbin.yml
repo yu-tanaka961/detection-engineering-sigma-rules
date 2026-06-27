@@ -1,0 +1,76 @@
+title: Suspicious Outbound Network Connection from LOLBin
+id: f7c3d9a1-1071-4de0-b8c7-unified-t1071003
+related:
+  - id: elastic-lolbin-network
+    type: derived
+  - id: splunk-lolbin-c2
+    type: derived
+status: experimental
+description: |
+  Detects outbound network connections from Windows LOLBins that should not
+  normally make external HTTP/HTTPS connections. Sysmon EventID 3 captures
+  network connections from processes like mshta, regsvr32, rundll32, and
+  certutil to external IP addresses.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1071/001/
+  - https://lolbas-project.github.io/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.command_and_control
+  - attack.t1071.001
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: network_connection
+  product: windows
+detection:
+  selection_lolbin_network:
+    Image|endswith:
+      - '\mshta.exe'
+      - '\regsvr32.exe'
+      - '\rundll32.exe'
+      - '\certutil.exe'
+      - '\cscript.exe'
+      - '\wscript.exe'
+      - '\msiexec.exe'
+      - '\InstallUtil.exe'
+      - '\MSBuild.exe'
+    Initiated: 'true'
+  selection_http_ports:
+    DestinationPort:
+      - 80
+      - 443
+      - 8080
+      - 8443
+  filter_local:
+    DestinationIp|startswith:
+      - '10.'
+      - '172.16.'
+      - '172.17.'
+      - '172.18.'
+      - '172.19.'
+      - '172.20.'
+      - '172.21.'
+      - '172.22.'
+      - '172.23.'
+      - '172.24.'
+      - '172.25.'
+      - '172.26.'
+      - '172.27.'
+      - '172.28.'
+      - '172.29.'
+      - '172.30.'
+      - '172.31.'
+      - '192.168.'
+      - '127.'
+  condition: selection_lolbin_network and selection_http_ports and not filter_local
+falsepositives:
+  - Legitimate software using LOLBins for updates
+  - msiexec installing packages from HTTP sources
+level: high

@@ -1,0 +1,52 @@
+title: NTLM Logon Anomaly Indicating Pass-the-Hash
+id: f7c3d9a1-5502-4de0-b8c7-unified-t1550002
+related:
+  - id: sigmahq-ntlm-logon-anomaly
+    type: derived
+  - id: elastic-pth-logon-detection
+    type: derived
+status: experimental
+description: |
+  Detects anomalous NTLM authentication events that may indicate Pass-the-Hash
+  attacks. Monitors for network logon (Type 3) with NTLM authentication where
+  the source is an internal workstation, especially with local admin accounts.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1550/002/
+  - https://jpcert.or.jp/english/pub/sr/ir_research.html
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.lateral_movement
+  - attack.t1550.002
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_ntlm_network_logon:
+    EventID: 4624
+    LogonType: 3
+    AuthenticationPackageName: 'NTLM'
+    LmPackageName: 'NTLM V2'
+  filter_machine_accounts:
+    TargetUserName|endswith: '$'
+  filter_anonymous:
+    TargetUserName: 'ANONYMOUS LOGON'
+  selection_local_admin:
+    TargetUserName:
+      - 'Administrator'
+      - 'admin'
+    EventID: 4624
+    LogonType: 3
+    AuthenticationPackageName: 'NTLM'
+  condition: (selection_ntlm_network_logon and not filter_machine_accounts and not filter_anonymous) or selection_local_admin
+falsepositives:
+  - Legitimate NTLM authentication from legacy systems
+  - Service accounts using NTLM authentication
+level: medium

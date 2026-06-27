@@ -1,0 +1,54 @@
+title: Pass-the-Hash Process Creation Anomaly (Logon ID Mismatch)
+id: f7c3d9a1-5502-4de0-b8c7-unified-t1550003
+related:
+  - id: elastic-pth-process-anomaly
+    type: derived
+  - id: splunk-pth-detection
+    type: derived
+status: experimental
+description: |
+  Detects process creation anomalies indicative of Pass-the-Hash, including
+  processes spawned with a different logon session than their parent, and
+  overpass-the-hash via Rubeus asktgt with NTLM hash. The logon type 9
+  (NewCredentials) is characteristic of sekurlsa::pth behavior.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1550/002/
+  - https://stealthbits.com/blog/how-to-detect-pass-the-hash-attacks/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.lateral_movement
+  - attack.t1550.002
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_logon_type9:
+    EventID: 4624
+    LogonType: 9
+    LogonProcessName: 'seclogo'
+    AuthenticationPackageName: 'Negotiate'
+  selection_overpass:
+    EventID: 4768
+    TicketEncryptionType: '0x17'
+  selection_logon_explicit_cred:
+    EventID: 4648
+  filter_legitimate:
+    ProcessName|endswith:
+      - '\svchost.exe'
+      - '\services.exe'
+      - '\lsass.exe'
+      - '\taskhost.exe'
+      - '\winlogon.exe'
+  condition: selection_logon_type9 or selection_overpass or (selection_logon_explicit_cred and not filter_legitimate)
+falsepositives:
+  - RunAs with explicit credentials
+  - Scheduled tasks running under different user context
+level: high

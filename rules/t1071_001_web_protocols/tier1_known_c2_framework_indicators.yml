@@ -1,0 +1,69 @@
+title: Known C2 Framework HTTP Indicators
+id: f7c3d9a1-1071-4de0-b8c7-unified-t1071002
+related:
+  - id: sigmahq-c2-framework-indicators
+    type: derived
+  - id: elastic-c2-beacon
+    type: derived
+status: experimental
+description: |
+  Detects command-line indicators of known C2 frameworks that use HTTP/HTTPS
+  for communication, including Cobalt Strike, Meterpreter, Sliver, Havoc,
+  Covenant, and Empire. Monitors for beacon configuration and callback patterns.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1071/001/
+  - https://github.com/BishopFox/sliver
+  - https://github.com/HavocFramework/Havoc
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.command_and_control
+  - attack.t1071.001
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_cobalt_strike:
+    CommandLine|contains:
+      - 'beacon'
+      - 'cobaltstrike'
+      - 'C2_PROFILE'
+  selection_meterpreter:
+    CommandLine|contains:
+      - 'meterpreter'
+      - 'reverse_http'
+      - 'reverse_https'
+      - 'LHOST='
+      - 'LPORT='
+  selection_sliver:
+    CommandLine|contains:
+      - 'sliver'
+      - 'implant'
+    CommandLine|contains:
+      - '--http'
+      - '--https'
+      - '-l '
+  selection_empire:
+    CommandLine|contains:
+      - 'Empire'
+      - 'Stager'
+      - 'Invoke-Empire'
+  selection_generic_c2:
+    CommandLine|contains:
+      - 'Covenant'
+      - 'Grunt'
+      - 'Havoc'
+      - 'PoshC2'
+      - 'Merlin'
+      - 'Brute Ratel'
+  condition: selection_cobalt_strike or selection_meterpreter or selection_sliver or selection_empire or selection_generic_c2
+falsepositives:
+  - Security testing tools during authorized penetration testing
+level: critical

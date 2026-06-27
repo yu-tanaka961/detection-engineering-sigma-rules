@@ -1,0 +1,61 @@
+title: DNS Tunneling Tool Execution
+id: f7c3d9a1-1572-4de0-b8c7-unified-t1572002
+related:
+  - id: sigmahq-dns-tunnel
+    type: derived
+  - id: elastic-dns-tunneling
+    type: derived
+status: experimental
+description: |
+  Detects execution of DNS tunneling tools including iodine, dnscat2, dns2tcp,
+  and Cobalt Strike DNS beacon. DNS tunneling encodes data in DNS queries
+  to bypass network restrictions and exfiltrate data.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1572/
+  - https://github.com/iagox86/dnscat2
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.command_and_control
+  - attack.t1572
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_dns_tunnel_tools:
+    CommandLine|contains:
+      - 'iodine'
+      - 'dnscat'
+      - 'dns2tcp'
+      - 'DNSExfiltrator'
+      - 'Invoke-DNSExfiltration'
+      - 'godoh'
+  selection_nslookup_abuse:
+    Image|endswith: '\nslookup.exe'
+    CommandLine|contains:
+      - '-type=TXT'
+      - '-type=CNAME'
+      - '-type=MX'
+      - '-querytype=TXT'
+  selection_suspicious_parent:
+    ParentImage|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+  selection_cobalt_dns:
+    CommandLine|contains:
+      - 'beacon'
+      - 'dns-beacon'
+      - 'mode dns'
+  condition: selection_dns_tunnel_tools or (selection_nslookup_abuse and selection_suspicious_parent) or selection_cobalt_dns
+falsepositives:
+  - Legitimate DNS administration tools
+  - Network troubleshooting
+level: high

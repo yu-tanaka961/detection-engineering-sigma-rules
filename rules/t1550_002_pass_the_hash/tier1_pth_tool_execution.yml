@@ -1,0 +1,69 @@
+title: Pass-the-Hash Tool Execution
+id: f7c3d9a1-5502-4de0-b8c7-unified-t1550001
+related:
+  - id: sigmahq-pth-tools
+    type: derived
+  - id: elastic-pass-the-hash
+    type: derived
+status: experimental
+description: |
+  Detects execution of known Pass-the-Hash tools including Mimikatz sekurlsa::pth,
+  Impacket psexec/wmiexec/smbexec with hash, pth-winexe, and Invoke-TheHash.
+  Attackers use stolen NTLM hashes to authenticate without knowing the plaintext password.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1550/002/
+  - https://github.com/gentilkiwi/mimikatz
+  - https://github.com/fortra/impacket
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.lateral_movement
+  - attack.t1550.002
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_mimikatz_pth:
+    CommandLine|contains:
+      - 'sekurlsa::pth'
+      - 'sekurlsa::logonpasswords'
+      - '/ntlm:'
+      - '/rc4:'
+      - '/aes128:'
+      - '/aes256:'
+  selection_impacket_hash:
+    CommandLine|contains:
+      - 'psexec.py'
+      - 'wmiexec.py'
+      - 'smbexec.py'
+      - 'atexec.py'
+      - 'dcomexec.py'
+    CommandLine|contains:
+      - '-hashes'
+      - ':aad3b435'
+  selection_pth_tools:
+    CommandLine|contains:
+      - 'pth-winexe'
+      - 'pth-smbclient'
+      - 'pth-rpcclient'
+      - 'Invoke-TheHash'
+      - 'Invoke-SMBExec'
+      - 'Invoke-WMIExec'
+  selection_evil_winrm:
+    CommandLine|contains:
+      - 'evil-winrm'
+      - 'Evil-WinRM'
+    CommandLine|contains:
+      - '-H '
+      - '--hash'
+  condition: selection_mimikatz_pth or selection_impacket_hash or selection_pth_tools or selection_evil_winrm
+falsepositives:
+  - Security assessment tools during authorized penetration testing
+level: critical

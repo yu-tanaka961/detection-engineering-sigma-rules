@@ -188,10 +188,34 @@ detection-engineering-sigma-rules/
 │   │   ├── tier1_rdp_suspicious_connection.yml
 │   │   ├── tier1_rdp_session_hijacking.yml
 │   │   └── tier2_rdp_registry_and_firewall_modification.yml
-│   └── t1570_lateral_tool_transfer/    # MITRE ATT&CK T1570
-│       ├── tier1_lateral_file_copy_commands.yml
-│       ├── tier1_smb_executable_file_write.yml
-│       └── tier2_lateral_transfer_via_wmi_or_winrm.yml
+│   ├── t1570_lateral_tool_transfer/    # MITRE ATT&CK T1570
+│   │   ├── tier1_lateral_file_copy_commands.yml
+│   │   ├── tier1_smb_executable_file_write.yml
+│   │   └── tier2_lateral_transfer_via_wmi_or_winrm.yml
+│   ├── t1550_002_pass_the_hash/        # MITRE ATT&CK T1550.002
+│   │   ├── tier1_pth_tool_execution.yml
+│   │   ├── tier1_ntlm_logon_anomaly.yml
+│   │   └── tier2_pth_process_creation_anomaly.yml
+│   ├── t1560_archive_collected_data/    # MITRE ATT&CK T1560
+│   │   ├── tier1_archive_tool_suspicious_execution.yml
+│   │   ├── tier1_powershell_compress_archive.yml
+│   │   └── tier2_large_archive_creation_exfil_staging.yml
+│   ├── t1071_001_web_protocols/         # MITRE ATT&CK T1071.001
+│   │   ├── tier1_suspicious_http_c2_patterns.yml
+│   │   ├── tier1_known_c2_framework_indicators.yml
+│   │   └── tier2_suspicious_outbound_connection_lolbin.yml
+│   ├── t1219_remote_access_software/    # MITRE ATT&CK T1219
+│   │   ├── tier1_remote_access_tool_execution.yml
+│   │   ├── tier1_rat_network_connection.yml
+│   │   └── tier2_rat_silent_install_or_portable.yml
+│   ├── t1572_protocol_tunneling/        # MITRE ATT&CK T1572
+│   │   ├── tier1_ssh_tunnel_suspicious_execution.yml
+│   │   ├── tier1_dns_tunnel_indicators.yml
+│   │   └── tier2_tunnel_network_connection_anomaly.yml
+│   └── t1090_proxy/                     # MITRE ATT&CK T1090
+│       ├── tier1_proxy_tool_execution.yml
+│       ├── tier1_web_shell_proxy_traffic.yml
+│       └── tier2_multi_hop_proxy_indicators.yml
 └── docs/
     ├── t1059_001_cross_source_analysis.md
     ├── t1003_006_cross_source_analysis.md
@@ -237,7 +261,13 @@ detection-engineering-sigma-rules/
     ├── t1083_cross_source_analysis.md
     ├── t1021_002_cross_source_analysis.md
     ├── t1021_001_cross_source_analysis.md
-    └── t1570_cross_source_analysis.md
+    ├── t1570_cross_source_analysis.md
+    ├── t1550_002_cross_source_analysis.md
+    ├── t1560_cross_source_analysis.md
+    ├── t1071_001_cross_source_analysis.md
+    ├── t1219_cross_source_analysis.md
+    ├── t1572_cross_source_analysis.md
+    └── t1090_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -697,6 +727,66 @@ detection-engineering-sigma-rules/
 | [SMB Executable File Write](rules/t1570_lateral_tool_transfer/tier1_smb_executable_file_write.yml) | 1 | High | file_event | High |
 | [WMI/WinRM File Transfer](rules/t1570_lateral_tool_transfer/tier2_lateral_transfer_via_wmi_or_winrm.yml) | 2 | High | process_creation | High |
 
+### T1550.002 — Pass the Hash
+
+3 unified Sigma rules detecting Pass-the-Hash attacks via PtH tool execution, NTLM logon anomalies, and Logon Type 9 / explicit credential abuse.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [PtH Tool Execution](rules/t1550_002_pass_the_hash/tier1_pth_tool_execution.yml) | 1 | Critical | process_creation | Medium |
+| [NTLM Logon Anomaly](rules/t1550_002_pass_the_hash/tier1_ntlm_logon_anomaly.yml) | 1 | High | security (4624) | High |
+| [PtH Process Creation Anomaly](rules/t1550_002_pass_the_hash/tier2_pth_process_creation_anomaly.yml) | 2 | High | security (4624/4648/4768) | High |
+
+### T1560 — Archive Collected Data
+
+3 unified Sigma rules detecting data archiving for exfiltration via archive tools, PowerShell compression, and staging directory file creation.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Archive Tool Suspicious Execution](rules/t1560_archive_collected_data/tier1_archive_tool_suspicious_execution.yml) | 1 | High | process_creation | Medium |
+| [PowerShell Compress-Archive](rules/t1560_archive_collected_data/tier1_powershell_compress_archive.yml) | 1 | Medium | process_creation | Medium |
+| [Large Archive in Staging Dir](rules/t1560_archive_collected_data/tier2_large_archive_creation_exfil_staging.yml) | 2 | High | file_event | High |
+
+### T1071.001 — Application Layer Protocol: Web Protocols
+
+3 unified Sigma rules detecting C2 communication over HTTP/HTTPS via LOLBin downloads, known C2 framework indicators, and LOLBin outbound connections.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Suspicious HTTP C2 Patterns](rules/t1071_001_web_protocols/tier1_suspicious_http_c2_patterns.yml) | 1 | High | process_creation | Medium |
+| [Known C2 Framework Indicators](rules/t1071_001_web_protocols/tier1_known_c2_framework_indicators.yml) | 1 | Critical | process_creation | Medium |
+| [LOLBin Outbound Connection](rules/t1071_001_web_protocols/tier2_suspicious_outbound_connection_lolbin.yml) | 2 | High | network_connection | High |
+
+### T1219 — Remote Access Software
+
+3 unified Sigma rules detecting unauthorized remote access tool usage via RAT execution, relay server connections, and silent/portable installations.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Remote Access Tool Execution](rules/t1219_remote_access_software/tier1_remote_access_tool_execution.yml) | 1 | High | process_creation | Medium |
+| [RAT Network Connection](rules/t1219_remote_access_software/tier1_rat_network_connection.yml) | 1 | High | network_connection | High |
+| [RAT Silent Install / Portable](rules/t1219_remote_access_software/tier2_rat_silent_install_or_portable.yml) | 2 | High | process_creation | High |
+
+### T1572 — Protocol Tunneling
+
+3 unified Sigma rules detecting protocol tunneling via SSH/tunnel tools, DNS tunneling indicators, and tunnel network connection anomalies.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [SSH Tunnel Suspicious Execution](rules/t1572_protocol_tunneling/tier1_ssh_tunnel_suspicious_execution.yml) | 1 | High | process_creation | Medium |
+| [DNS Tunnel Indicators](rules/t1572_protocol_tunneling/tier1_dns_tunnel_indicators.yml) | 1 | High | process_creation | Medium |
+| [Tunnel Network Connection Anomaly](rules/t1572_protocol_tunneling/tier2_tunnel_network_connection_anomaly.yml) | 2 | High | network_connection | High |
+
+### T1090 — Proxy
+
+3 unified Sigma rules detecting proxy usage via proxy tool execution, web shell proxy file creation, and multi-hop proxy/Tor indicators.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Proxy Tool Execution](rules/t1090_proxy/tier1_proxy_tool_execution.yml) | 1 | High | process_creation | Medium |
+| [Web Shell Proxy Traffic](rules/t1090_proxy/tier1_web_shell_proxy_traffic.yml) | 1 | Critical | file_event | High |
+| [Multi-Hop Proxy / Tor](rules/t1090_proxy/tier2_multi_hop_proxy_indicators.yml) | 2 | High | process_creation | High |
+
 ### Tiering Strategy
 
 - **Tier 1**: High-confidence, broad-coverage rules. Deploy immediately with minimal tuning.
@@ -752,7 +842,8 @@ Rules use extended tags to encode detection quality dimensions:
 | Sysmon FileCreate | 11 | SAM/NTDS file copy detection |
 | AD CS Audit | 4886/4887 | Certificate request/issuance |
 | AD CS Audit | 4898/4899 | Certificate template load/modify |
-| Windows Security Kerberos | 4768 | TGT request (Golden Ticket detection) |
+| Windows Security Kerberos | 4768 | TGT request (Golden Ticket / Overpass-the-Hash) |
+| Windows Security Logon | 4648 | Explicit credential use (Pass the Hash) |
 
 ## References
 
@@ -801,6 +892,12 @@ Rules use extended tags to encode detection quality dimensions:
 - [MITRE ATT&CK T1021.002](https://attack.mitre.org/techniques/T1021/002/)
 - [MITRE ATT&CK T1021.001](https://attack.mitre.org/techniques/T1021/001/)
 - [MITRE ATT&CK T1570](https://attack.mitre.org/techniques/T1570/)
+- [MITRE ATT&CK T1550.002](https://attack.mitre.org/techniques/T1550/002/)
+- [MITRE ATT&CK T1560](https://attack.mitre.org/techniques/T1560/)
+- [MITRE ATT&CK T1071.001](https://attack.mitre.org/techniques/T1071/001/)
+- [MITRE ATT&CK T1219](https://attack.mitre.org/techniques/T1219/)
+- [MITRE ATT&CK T1572](https://attack.mitre.org/techniques/T1572/)
+- [MITRE ATT&CK T1090](https://attack.mitre.org/techniques/T1090/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
@@ -850,6 +947,12 @@ Rules use extended tags to encode detection quality dimensions:
 - [T1021.002 Cross-source analysis](docs/t1021_002_cross_source_analysis.md)
 - [T1021.001 Cross-source analysis](docs/t1021_001_cross_source_analysis.md)
 - [T1570 Cross-source analysis](docs/t1570_cross_source_analysis.md)
+- [T1550.002 Cross-source analysis](docs/t1550_002_cross_source_analysis.md)
+- [T1560 Cross-source analysis](docs/t1560_cross_source_analysis.md)
+- [T1071.001 Cross-source analysis](docs/t1071_001_cross_source_analysis.md)
+- [T1219 Cross-source analysis](docs/t1219_cross_source_analysis.md)
+- [T1572 Cross-source analysis](docs/t1572_cross_source_analysis.md)
+- [T1090 Cross-source analysis](docs/t1090_cross_source_analysis.md)
 
 ## Author
 
