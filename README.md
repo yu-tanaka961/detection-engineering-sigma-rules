@@ -56,10 +56,30 @@ detection-engineering-sigma-rules/
 │   │   ├── tier1_schtasks_suspicious_creation.yml
 │   │   ├── tier1_taskscheduler_event_suspicious.yml
 │   │   └── tier2_schtasks_remote_creation.yml
-│   └── t1047_wmi/                    # MITRE ATT&CK T1047
-│       ├── tier1_wmic_suspicious_execution.yml
-│       ├── tier1_wmiprvse_suspicious_child.yml
-│       └── tier2_wmi_event_subscription_persistence.yml
+│   ├── t1047_wmi/                    # MITRE ATT&CK T1047
+│   │   ├── tier1_wmic_suspicious_execution.yml
+│   │   ├── tier1_wmiprvse_suspicious_child.yml
+│   │   └── tier2_wmi_event_subscription_persistence.yml
+│   ├── t1543_003_windows_service_persistence/ # MITRE ATT&CK T1543.003
+│   │   ├── tier1_service_registry_modification.yml
+│   │   ├── tier1_new_service_in_suspicious_location.yml
+│   │   └── tier2_service_dll_hijack.yml
+│   ├── t1547_001_registry_run_keys/  # MITRE ATT&CK T1547.001
+│   │   ├── tier1_registry_run_key_modification.yml
+│   │   ├── tier1_startup_folder_file_creation.yml
+│   │   └── tier2_registry_run_key_via_unusual_process.yml
+│   ├── t1136_001_local_account/      # MITRE ATT&CK T1136.001
+│   │   ├── tier1_local_account_creation.yml
+│   │   ├── tier1_local_account_event_log.yml
+│   │   └── tier2_hidden_account_creation.yml
+│   ├── t1197_bits_jobs/              # MITRE ATT&CK T1197
+│   │   ├── tier1_bitsadmin_suspicious_usage.yml
+│   │   ├── tier1_bits_persistence_via_notify.yml
+│   │   └── tier2_bits_unusual_job_creation.yml
+│   └── t1068_exploitation_privilege_escalation/ # MITRE ATT&CK T1068
+│       ├── tier1_suspicious_process_token_elevation.yml
+│       ├── tier1_known_exploit_tool_execution.yml
+│       └── tier2_vulnerable_driver_load.yml
 └── docs/
     ├── t1059_001_cross_source_analysis.md
     ├── t1003_006_cross_source_analysis.md
@@ -72,7 +92,12 @@ detection-engineering-sigma-rules/
     ├── t1204_002_cross_source_analysis.md
     ├── t1569_002_cross_source_analysis.md
     ├── t1053_005_cross_source_analysis.md
-    └── t1047_cross_source_analysis.md
+    ├── t1047_cross_source_analysis.md
+    ├── t1543_003_cross_source_analysis.md
+    ├── t1547_001_cross_source_analysis.md
+    ├── t1136_001_cross_source_analysis.md
+    ├── t1197_cross_source_analysis.md
+    └── t1068_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -202,6 +227,56 @@ detection-engineering-sigma-rules/
 | [WmiPrvSE Suspicious Child](rules/t1047_wmi/tier1_wmiprvse_suspicious_child.yml) | 1 | High | process_creation | High |
 | [WMI Event Subscription](rules/t1047_wmi/tier2_wmi_event_subscription_persistence.yml) | 2 | Critical | sysmon (19/20/21) | High |
 
+### T1543.003 — Windows Service Persistence
+
+3 unified Sigma rules detecting malicious service persistence via registry modification, suspicious service paths, and DLL hijacking.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Service Registry Modification](rules/t1543_003_windows_service_persistence/tier1_service_registry_modification.yml) | 1 | High | sysmon (13) | High |
+| [New Service in Suspicious Location](rules/t1543_003_windows_service_persistence/tier1_new_service_in_suspicious_location.yml) | 1 | High | system (7045) | High |
+| [Service DLL Hijack](rules/t1543_003_windows_service_persistence/tier2_service_dll_hijack.yml) | 2 | Critical | sysmon (7) | High |
+
+### T1547.001 — Registry Run Keys / Startup Folder
+
+3 unified Sigma rules detecting persistence via Run/RunOnce registry keys and Startup folder file creation.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Run Key Modification](rules/t1547_001_registry_run_keys/tier1_registry_run_key_modification.yml) | 1 | High | sysmon (13) | High |
+| [Startup Folder File Creation](rules/t1547_001_registry_run_keys/tier1_startup_folder_file_creation.yml) | 1 | High | sysmon (11) | High |
+| [Run Key via Unusual Process](rules/t1547_001_registry_run_keys/tier2_registry_run_key_via_unusual_process.yml) | 2 | Critical | sysmon (13) | High |
+
+### T1136.001 — Create Account: Local Account
+
+3 unified Sigma rules detecting local account creation via command-line tools, event logs, and hidden account techniques.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Local Account Creation (CLI)](rules/t1136_001_local_account/tier1_local_account_creation.yml) | 1 | High | process_creation | Medium |
+| [Account Event Log (4720/4732)](rules/t1136_001_local_account/tier1_local_account_event_log.yml) | 1 | High | security (4720/4732) | High |
+| [Hidden Account Creation](rules/t1136_001_local_account/tier2_hidden_account_creation.yml) | 2 | Critical | process_creation / sysmon (13) | High |
+
+### T1197 — BITS Jobs
+
+3 unified Sigma rules detecting BITS abuse for download, persistence, and evasion.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [BITSAdmin Suspicious Usage](rules/t1197_bits_jobs/tier1_bitsadmin_suspicious_usage.yml) | 1 | High | process_creation | Medium |
+| [BITS Persistence via Notify](rules/t1197_bits_jobs/tier1_bits_persistence_via_notify.yml) | 1 | Critical | process_creation | High |
+| [BITS Unusual Job Creation](rules/t1197_bits_jobs/tier2_bits_unusual_job_creation.yml) | 2 | Medium | bits-client (3) | High |
+
+### T1068 — Exploitation for Privilege Escalation
+
+3 unified Sigma rules detecting privilege escalation via token elevation anomalies, known exploit tools, and vulnerable driver loading (BYOVD).
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Suspicious Token Elevation](rules/t1068_exploitation_privilege_escalation/tier1_suspicious_process_token_elevation.yml) | 1 | High | security (4688) | High |
+| [Known Exploit Tool Execution](rules/t1068_exploitation_privilege_escalation/tier1_known_exploit_tool_execution.yml) | 1 | Critical | process_creation | Medium |
+| [Vulnerable Driver Load (BYOVD)](rules/t1068_exploitation_privilege_escalation/tier2_vulnerable_driver_load.yml) | 2 | Critical | sysmon (6) | High |
+
 ### Tiering Strategy
 
 - **Tier 1**: High-confidence, broad-coverage rules. Deploy immediately with minimal tuning.
@@ -243,6 +318,10 @@ Rules use extended tags to encode detection quality dimensions:
 | Windows System EventLog | 7045 | Service installation detection |
 | Windows Security Task Scheduler | 4698 | Scheduled task registration |
 | Sysmon WMI Events | 19/20/21 | WMI event subscription persistence |
+| Sysmon RegistryEvent | 13 | Service registry, Run key modification |
+| Sysmon DriverLoad | 6 | Vulnerable driver load detection |
+| Windows Security Account Mgmt | 4720/4732 | Local account creation / group add |
+| BITS Client | 3 | BITS job creation monitoring |
 
 ## References
 
@@ -258,6 +337,11 @@ Rules use extended tags to encode detection quality dimensions:
 - [MITRE ATT&CK T1569.002](https://attack.mitre.org/techniques/T1569/002/)
 - [MITRE ATT&CK T1053.005](https://attack.mitre.org/techniques/T1053/005/)
 - [MITRE ATT&CK T1047](https://attack.mitre.org/techniques/T1047/)
+- [MITRE ATT&CK T1543.003](https://attack.mitre.org/techniques/T1543/003/)
+- [MITRE ATT&CK T1547.001](https://attack.mitre.org/techniques/T1547/001/)
+- [MITRE ATT&CK T1136.001](https://attack.mitre.org/techniques/T1136/001/)
+- [MITRE ATT&CK T1197](https://attack.mitre.org/techniques/T1197/)
+- [MITRE ATT&CK T1068](https://attack.mitre.org/techniques/T1068/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
@@ -274,6 +358,11 @@ Rules use extended tags to encode detection quality dimensions:
 - [T1569.002 Cross-source analysis](docs/t1569_002_cross_source_analysis.md)
 - [T1053.005 Cross-source analysis](docs/t1053_005_cross_source_analysis.md)
 - [T1047 Cross-source analysis](docs/t1047_cross_source_analysis.md)
+- [T1543.003 Cross-source analysis](docs/t1543_003_cross_source_analysis.md)
+- [T1547.001 Cross-source analysis](docs/t1547_001_cross_source_analysis.md)
+- [T1136.001 Cross-source analysis](docs/t1136_001_cross_source_analysis.md)
+- [T1197 Cross-source analysis](docs/t1197_cross_source_analysis.md)
+- [T1068 Cross-source analysis](docs/t1068_cross_source_analysis.md)
 
 ## Author
 

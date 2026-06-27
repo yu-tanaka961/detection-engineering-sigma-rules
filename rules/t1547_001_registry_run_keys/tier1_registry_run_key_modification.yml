@@ -1,0 +1,90 @@
+title: Suspicious Registry Run Key Modification
+id: f7c3d9a1-1301-4de0-b8c7-unified-t1547001
+related:
+    - id: 17f878b8-9968-4f3f-ba58-e7b7e303b268  # SigmaHQ run key modification
+      type: derived
+status: test
+description: |
+    Detects modification of Windows Registry Run/RunOnce keys used for
+    persistence. These keys cause programs to execute every time a user
+    logs on. Adversaries frequently abuse these keys to maintain access.
+    Registry modifications are logged by Sysmon EventID 13 and are
+    architecturally difficult to suppress.
+    Unified from:
+    - SigmaHQ registry_set_run_key_modification.yml
+    - Elastic persistence_registry_run_key.toml
+    - Splunk ESCU (Registry Keys Used For Persistence)
+    - Azure Sentinel (Suspicious Registry Run Key Modification)
+references:
+    - https://attack.mitre.org/techniques/T1547/001/
+    - https://learn.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/registry/registry_set/registry_set_asep_reg_keys_modification_currentversion.yml
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.persistence
+    - attack.t1547.001
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-registryset-13
+logsource:
+    category: registry_set
+    product: windows
+detection:
+    # Standard Run keys
+    selection_run_keys:
+        TargetObject|contains:
+            - '\CurrentVersion\Run\'
+            - '\CurrentVersion\RunOnce\'
+            - '\CurrentVersion\RunServices\'
+            - '\CurrentVersion\RunServicesOnce\'
+            - '\CurrentVersion\Explorer\Shell Folders'
+            - '\CurrentVersion\Explorer\User Shell Folders'
+
+    # Suspicious values pointing to scripts or LOLBins
+    selection_suspicious_value:
+        Details|contains:
+            - 'cmd.exe'
+            - 'cmd /c'
+            - 'powershell'
+            - 'pwsh'
+            - 'mshta'
+            - 'wscript'
+            - 'cscript'
+            - 'rundll32'
+            - 'regsvr32'
+            - 'certutil'
+            - 'bitsadmin'
+            - '\Temp\'
+            - '\AppData\Local\Temp\'
+            - '\Users\Public\'
+            - '\ProgramData\'
+            - '\Downloads\'
+            - 'http://'
+            - 'https://'
+            - '.vbs'
+            - '.js'
+            - '.bat'
+            - '.ps1'
+            - '.hta'
+
+    # Filter: legitimate software autostart
+    filter_main_microsoft:
+        Image|startswith:
+            - 'C:\Windows\'
+            - 'C:\Program Files\'
+            - 'C:\Program Files (x86)\'
+        Details|contains:
+            - 'C:\Program Files'
+            - 'C:\Windows'
+
+    condition: selection_run_keys and selection_suspicious_value and not 1 of filter_*
+falsepositives:
+    - Legitimate software installers adding autostart entries
+    - User-installed applications with auto-update components
+    - Corporate endpoint management adding startup entries
+level: high

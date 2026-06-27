@@ -1,0 +1,81 @@
+title: New Windows Service Created with Binary in Suspicious Location
+id: f7c3d9a1-1202-4de0-b8c7-unified-t1543003
+related:
+    - id: 7036d93c-7cca-4b64-b832-d71b3b0e3c87  # SigmaHQ suspicious service
+      type: derived
+status: test
+description: |
+    Detects creation of new Windows services (EventID 7045) where the service
+    binary is located in a non-standard directory such as Temp, AppData,
+    Downloads, or ProgramData. Legitimate services are almost always installed
+    in Program Files or System32.
+    EventID 7045 is kernel-logged and provides the full service binary path,
+    making it a reliable and evasion-resistant detection source.
+    Unified from:
+    - SigmaHQ win_system_service_install_susp_location.yml
+    - Elastic persistence_service_suspicious_path.toml
+    - Splunk ESCU (Service Created from Non-Standard Path)
+    - Azure Sentinel (Service Installed from Unusual Location)
+references:
+    - https://attack.mitre.org/techniques/T1543/003/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/system/service_control_manager/win_system_service_install_susp.yml
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.persistence
+    - attack.privilege_escalation
+    - attack.t1543.003
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-system-7045
+logsource:
+    product: windows
+    service: system
+detection:
+    selection_event:
+        EventID: 7045
+
+    # Service binary in suspicious locations
+    selection_path_temp:
+        ImagePath|contains:
+            - '\Temp\'
+            - '\tmp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\ProgramData\'
+            - '\Downloads\'
+            - '\Desktop\'
+            - '\Recycle'
+
+    # Service binary is a script or LOLBin
+    selection_path_script:
+        ImagePath|contains:
+            - '.bat'
+            - '.cmd'
+            - '.vbs'
+            - '.js'
+            - '.ps1'
+            - '.hta'
+
+    # UNC path (remote binary)
+    selection_path_unc:
+        ImagePath|startswith: '\\\\'
+
+    # Service type: kernel driver from user-writable location
+    selection_kernel_driver:
+        ServiceType: 'kernel mode driver'
+        ImagePath|contains:
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\'
+
+    condition: selection_event and (selection_path_temp or selection_path_script or selection_path_unc or selection_kernel_driver)
+falsepositives:
+    - Portable software with service components
+    - Development environments running services from build directories
+    - Some VPN/endpoint clients installing from user directories
+level: high

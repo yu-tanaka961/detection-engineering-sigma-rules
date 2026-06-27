@@ -1,0 +1,76 @@
+title: BITS Job Persistence via SetNotifyCmdLine
+id: f7c3d9a1-1502-4de0-b8c7-unified-t1197
+related:
+    - id: a3c5d7e9-1b2c-4d5e-6f7a-8b9c0d1e2f3a  # Elastic BITS persistence
+      type: derived
+status: test
+description: |
+    Detects creation of BITS jobs with SetNotifyCmdLine, which causes a
+    command to execute when the BITS job completes. This is a persistence
+    mechanism because BITS jobs survive reboots and the notification command
+    executes under SYSTEM context. This is distinct from simple downloads
+    and specifically targets the persistence capability.
+    Unified from:
+    - Elastic persistence_bits_notify_cmdline.toml
+    - SigmaHQ proc_creation_win_bitsadmin_setnotifycmdline.yml
+    - Splunk ESCU (BITS Job Persistence)
+references:
+    - https://attack.mitre.org/techniques/T1197/
+    - https://docs.microsoft.com/en-us/windows/win32/bits/using-bits
+    - https://www.fireeye.com/blog/threat-research/2020/03/monitoring-windows-bits-service.html
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.persistence
+    - attack.defense_evasion
+    - attack.t1197
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith: '\bitsadmin.exe'
+        - OriginalFileName: 'bitsadmin.exe'
+
+    # SetNotifyCmdLine with suspicious executable
+    selection_notify_cmd:
+        CommandLine|contains: 'SetNotifyCmdLine'
+
+    selection_notify_suspicious:
+        CommandLine|contains:
+            - 'cmd.exe'
+            - 'cmd /c'
+            - 'powershell'
+            - 'pwsh'
+            - 'mshta'
+            - 'wscript'
+            - 'cscript'
+            - 'rundll32'
+            - 'regsvr32'
+            - 'certutil'
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\Public\'
+
+    # PowerShell BITS cmdlets with notification
+    selection_ps_bits:
+        Image|endswith:
+            - '\powershell.exe'
+            - '\pwsh.exe'
+        CommandLine|contains:
+            - 'Start-BitsTransfer'
+            - 'Add-BitsFile'
+        CommandLine|contains:
+            - '-NotifyFlags'
+            - '-NotifyCmdLine'
+
+    condition: (selection_img and selection_notify_cmd and selection_notify_suspicious) or selection_ps_bits
+falsepositives:
+    - Legitimate BITS job orchestration by deployment tools
+    - SCCM package distribution with post-download actions
+level: critical

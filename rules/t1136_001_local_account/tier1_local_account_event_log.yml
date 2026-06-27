@@ -1,0 +1,63 @@
+title: Local Account Created via Security Event Log
+id: f7c3d9a1-1402-4de0-b8c7-unified-t1136001
+related:
+    - id: b8a4d9e2-3c1f-4a5b-8d7e-f6a0b1c2d3e4  # SigmaHQ account creation event
+      type: derived
+status: test
+description: |
+    Detects local account creation via Windows Security EventID 4720
+    (A user account was created). This event is logged regardless of the
+    method used to create the account (net.exe, PowerShell, GUI, API),
+    making it more comprehensive than command-line monitoring alone.
+    Combined with EventID 4732 (member added to security-enabled group)
+    to detect privilege escalation via group membership.
+    Unified from:
+    - SigmaHQ win_security_user_account_created.yml
+    - Elastic persistence_account_creation_event.toml
+    - Splunk ESCU (Windows Account Created)
+    - Azure Sentinel (Local Account Creation Event)
+references:
+    - https://attack.mitre.org/techniques/T1136/001/
+    - https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4720
+    - https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4732
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.persistence
+    - attack.t1136.001
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-security-4720
+logsource:
+    product: windows
+    service: security
+detection:
+    # Account creation event
+    selection_created:
+        EventID: 4720
+
+    # Member added to local Administrators group
+    selection_admin_group:
+        EventID: 4732
+        TargetUserName: 'Administrators'
+
+    # Filter: machine accounts (created during domain join)
+    filter_main_machine:
+        TargetUserName|endswith: '$'
+
+    # Filter: well-known system operations
+    filter_main_system:
+        SubjectUserName:
+            - 'SYSTEM'
+            - 'LOCAL SERVICE'
+
+    condition: (selection_created or selection_admin_group) and not 1 of filter_*
+falsepositives:
+    - Legitimate user provisioning by IT helpdesk
+    - Automated onboarding scripts
+    - Local account creation during software installation
+level: medium

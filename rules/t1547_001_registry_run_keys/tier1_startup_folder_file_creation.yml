@@ -1,0 +1,78 @@
+title: Suspicious File Created in Startup Folder
+id: f7c3d9a1-1302-4de0-b8c7-unified-t1547001
+related:
+    - id: c2c1f9a0-8b9e-4f3c-a5d6-e7f0b1c2d3e4  # SigmaHQ startup folder
+      type: derived
+status: test
+description: |
+    Detects creation of executable, script, or shortcut files in Windows
+    Startup folders. Files placed in these folders execute automatically
+    when a user logs on, making it a simple but effective persistence
+    mechanism. File creation events are logged by Sysmon EventID 11.
+    Unified from:
+    - SigmaHQ file_event_win_startup_folder_file_write.yml
+    - Elastic persistence_startup_folder_file_creation.toml
+    - Splunk ESCU (Startup Folder File Write)
+    - Azure Sentinel (Suspicious Startup Folder File)
+references:
+    - https://attack.mitre.org/techniques/T1547/001/
+    - https://learn.microsoft.com/en-us/windows/win32/shell/manage-startup-applications
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.persistence
+    - attack.t1547.001
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-filecreate-11
+logsource:
+    category: file_event
+    product: windows
+detection:
+    # User Startup folder
+    selection_path_user:
+        TargetFilename|contains:
+            - '\Start Menu\Programs\Startup\'
+            - '\Start Menu\Programs\スタートアップ\'
+
+    # All Users Startup folder
+    selection_path_allusers:
+        TargetFilename|contains:
+            - '\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\'
+            - '\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\'
+
+    # Suspicious file types
+    selection_extension:
+        TargetFilename|endswith:
+            - '.exe'
+            - '.dll'
+            - '.scr'
+            - '.bat'
+            - '.cmd'
+            - '.vbs'
+            - '.vbe'
+            - '.js'
+            - '.jse'
+            - '.wsf'
+            - '.wsh'
+            - '.ps1'
+            - '.hta'
+            - '.lnk'
+
+    # Filter: legitimate installers
+    filter_main_msiexec:
+        Image|endswith: '\msiexec.exe'
+    filter_main_explorer:
+        Image|endswith: '\explorer.exe'
+        TargetFilename|endswith: '.lnk'
+
+    condition: (selection_path_user or selection_path_allusers) and selection_extension and not 1 of filter_*
+falsepositives:
+    - Users manually adding application shortcuts to startup
+    - Software installers creating legitimate startup entries
+    - Corporate deployment scripts adding startup items
+level: high

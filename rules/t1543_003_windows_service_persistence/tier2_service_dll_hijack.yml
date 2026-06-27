@@ -1,0 +1,74 @@
+title: Potential Service DLL Hijack or Sideloading
+id: f7c3d9a1-1203-4de0-b8c7-unified-t1543003
+related:
+    - id: 8e4a2b5c-1f3d-4c7a-9e6b-d0a1b2c3d4e5  # Elastic service DLL hijack
+      type: derived
+status: test
+description: |
+    Detects potential DLL hijacking or sideloading targeting Windows services
+    by monitoring for DLL loads from unexpected paths by svchost.exe or other
+    service host processes. When a service DLL is loaded from a non-System32
+    location, it may indicate that an adversary has placed a malicious DLL
+    in a location that takes precedence in the DLL search order.
+    Unified from:
+    - Elastic persistence_service_dll_sideload.toml
+    - SigmaHQ image_load_svchost_susp_dll.yml
+    - Splunk ESCU (Svchost Loading Suspicious DLL)
+references:
+    - https://attack.mitre.org/techniques/T1543/003/
+    - https://attack.mitre.org/techniques/T1574/001/
+    - https://www.hexacorn.com/blog/category/autostart-persistence/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.persistence
+    - attack.defense_evasion
+    - attack.t1543.003
+    - attack.t1574.001
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-imageload-7
+logsource:
+    category: image_load
+    product: windows
+detection:
+    # svchost.exe loading DLLs
+    selection_svchost:
+        Image|endswith: '\svchost.exe'
+
+    # DLL loaded from non-standard location
+    selection_suspicious_path:
+        ImageLoaded|contains:
+            - '\Temp\'
+            - '\tmp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\ProgramData\'
+            - '\Downloads\'
+            - '\Desktop\'
+
+    # Also detect unsigned DLLs loaded by svchost
+    selection_unsigned:
+        Image|endswith: '\svchost.exe'
+        Signed: 'false'
+
+    # Filter: legitimate DLL paths
+    filter_main_system32:
+        ImageLoaded|startswith:
+            - 'C:\Windows\System32\'
+            - 'C:\Windows\SysWOW64\'
+    filter_main_winsxs:
+        ImageLoaded|startswith: 'C:\Windows\WinSxS\'
+    filter_main_program_files:
+        ImageLoaded|startswith:
+            - 'C:\Program Files\'
+            - 'C:\Program Files (x86)\'
+
+    condition: selection_svchost and (selection_suspicious_path or (selection_unsigned and not 1 of filter_main_*))
+falsepositives:
+    - Third-party services with DLLs in non-standard locations
+    - Custom service implementations during development
+level: high

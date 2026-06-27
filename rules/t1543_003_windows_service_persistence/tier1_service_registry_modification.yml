@@ -1,0 +1,83 @@
+title: Suspicious Windows Service Registry Modification
+id: f7c3d9a1-1201-4de0-b8c7-unified-t1543003
+related:
+    - id: 6a4b2e1c-9f3d-4e7a-8c5b-d0f1e2a3b4c5  # SigmaHQ service registry
+      type: derived
+status: test
+description: |
+    Detects direct modification of Windows service registry keys to change
+    the service binary path (ImagePath) or service DLL (ServiceDll).
+    Adversaries modify existing service configurations to point to malicious
+    binaries, achieving persistence and privilege escalation without creating
+    new services. Registry modification is logged by Sysmon EventID 13 and
+    is difficult to suppress.
+    Unified from:
+    - SigmaHQ registry_set_services_suspicious_modification.yml
+    - Elastic persistence_service_registry_modification.toml
+    - Splunk ESCU (Suspicious Service Registry Modification)
+    - Azure Sentinel (Service Binary Path Modification)
+references:
+    - https://attack.mitre.org/techniques/T1543/003/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/registry/registry_set/registry_set_services_suspicious_modification.yml
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.persistence
+    - attack.privilege_escalation
+    - attack.t1543.003
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-registryset-13
+logsource:
+    category: registry_set
+    product: windows
+detection:
+    # Service ImagePath modification
+    selection_imagepath:
+        TargetObject|contains: '\Services\'
+        TargetObject|endswith: '\ImagePath'
+
+    # Service DLL modification (svchost-hosted services)
+    selection_servicedll:
+        TargetObject|contains: '\Services\'
+        TargetObject|endswith:
+            - '\ServiceDll'
+            - '\ServiceManifest'
+
+    # Suspicious values in the modified path
+    selection_suspicious_value:
+        Details|contains:
+            - 'cmd.exe'
+            - 'cmd /c'
+            - 'powershell'
+            - 'pwsh'
+            - 'mshta'
+            - 'rundll32'
+            - 'regsvr32'
+            - 'certutil'
+            - '\Temp\'
+            - '\tmp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\Downloads\'
+            - 'http://'
+            - 'https://'
+
+    # Filter: legitimate service updates
+    filter_main_msiexec:
+        Image|endswith: '\msiexec.exe'
+    filter_main_tiworker:
+        Image|endswith: '\TiWorker.exe'
+    filter_main_trusted_installer:
+        Image|endswith: '\TrustedInstaller.exe'
+
+    condition: (selection_imagepath or selection_servicedll) and selection_suspicious_value and not 1 of filter_*
+falsepositives:
+    - Legitimate software updates modifying service paths
+    - Service pack or cumulative update installations
+    - Third-party endpoint management tools
+level: high

@@ -1,0 +1,66 @@
+title: BITS Job Created by Unusual Process
+id: f7c3d9a1-1503-4de0-b8c7-unified-t1197
+related:
+    - id: e6f7a8b9-0c1d-2e3f-4a5b-6c7d8e9f0a1b  # SigmaHQ BITS unusual process
+      type: derived
+status: test
+description: |
+    Detects BITS job creation events (Microsoft-Windows-Bits-Client EventID 3)
+    initiated by unusual processes. This event log monitors BITS activity
+    at the service level, capturing jobs created via any method (bitsadmin,
+    PowerShell, COM API), making it more comprehensive than process-level
+    monitoring.
+    Unified from:
+    - SigmaHQ win_bits_client_susp_job.yml
+    - Elastic defense_evasion_bits_unusual_job.toml
+    - Splunk ESCU (BITS Job Created from Suspicious Process)
+references:
+    - https://attack.mitre.org/techniques/T1197/
+    - https://learn.microsoft.com/en-us/windows/win32/bits/using-bits
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.persistence
+    - attack.t1197
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.bits-client-log
+logsource:
+    product: windows
+    service: bits-client
+detection:
+    # BITS job created event
+    selection_event:
+        EventID: 3
+
+    # Suspicious remote URLs in BITS job
+    selection_url:
+        RemoteName|contains:
+            - 'http://'
+            - 'https://'
+            - 'ftp://'
+
+    # Exclude legitimate Microsoft and known CDN URLs
+    filter_main_microsoft:
+        RemoteName|contains:
+            - 'microsoft.com'
+            - 'windowsupdate.com'
+            - 'windows.com'
+            - '.azure.com'
+            - 'office.com'
+            - 'office365.com'
+
+    filter_main_delivery:
+        RemoteName|contains:
+            - 'delivery.mp.microsoft.com'
+            - 'download.windowsupdate.com'
+
+    condition: selection_event and selection_url and not 1 of filter_*
+falsepositives:
+    - Third-party software using BITS for legitimate background downloads
+    - Corporate applications downloading updates via BITS
+level: medium

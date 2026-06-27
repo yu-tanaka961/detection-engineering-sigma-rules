@@ -1,0 +1,73 @@
+title: Registry Run Key Modified by Unusual Process
+id: f7c3d9a1-1303-4de0-b8c7-unified-t1547001
+related:
+    - id: b5c7d8e9-2a1b-4f3c-8d6e-a0f1b2c3d4e5  # Elastic unusual run key modification
+      type: derived
+status: test
+description: |
+    Detects modification of Registry Run keys by processes that should not
+    typically modify autostart entries. This includes scripting engines,
+    LOLBins, and processes launched from temporary directories.
+    The combination of "which process" and "what it modifies" provides
+    high-precision detection with fewer false positives than monitoring
+    Run key changes alone.
+    Unified from:
+    - Elastic persistence_run_key_unusual_process.toml
+    - SigmaHQ registry_set_asep_reg_keys_modification_by_susp_process.yml
+    - Splunk ESCU (Run Key Modification by Suspicious Process)
+references:
+    - https://attack.mitre.org/techniques/T1547/001/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.persistence
+    - attack.t1547.001
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-tool-change-resistance
+    - x-log-requirement.sysmon-registryset-13
+logsource:
+    category: registry_set
+    product: windows
+detection:
+    # Run key targets
+    selection_target:
+        TargetObject|contains:
+            - '\CurrentVersion\Run\'
+            - '\CurrentVersion\RunOnce\'
+
+    # Suspicious modifying processes - scripting engines
+    selection_process_script:
+        Image|endswith:
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\cmd.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\mshta.exe'
+
+    # LOLBins
+    selection_process_lolbin:
+        Image|endswith:
+            - '\rundll32.exe'
+            - '\regsvr32.exe'
+            - '\certutil.exe'
+            - '\msiexec.exe'
+
+    # Processes from temp/user directories
+    selection_process_temp:
+        Image|contains:
+            - '\Temp\'
+            - '\tmp\'
+            - '\AppData\Local\Temp\'
+            - '\Users\Public\'
+            - '\Downloads\'
+            - '\Desktop\'
+
+    condition: selection_target and (selection_process_script or selection_process_lolbin or selection_process_temp)
+falsepositives:
+    - PowerShell-based software installers setting autostart
+    - Self-updating applications modifying their startup entries
+level: high

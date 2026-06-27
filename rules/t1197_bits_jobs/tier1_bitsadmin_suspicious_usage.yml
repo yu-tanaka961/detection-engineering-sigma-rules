@@ -1,0 +1,78 @@
+title: Suspicious BITSAdmin Usage for Download or Execution
+id: f7c3d9a1-1501-4de0-b8c7-unified-t1197
+related:
+    - id: d059842b-6b9d-4ed1-b5c3-5b89143c6ede  # SigmaHQ bitsadmin abuse
+      type: derived
+status: test
+description: |
+    Detects suspicious use of bitsadmin.exe for file download, upload, or
+    command execution. BITS (Background Intelligent Transfer Service) is a
+    legitimate Windows component abused by adversaries for stealthy file
+    transfers and persistence because BITS jobs survive reboots and run
+    in the background.
+    Unified from:
+    - SigmaHQ proc_creation_win_bitsadmin_download.yml
+    - Elastic defense_evasion_bitsadmin_download.toml
+    - Splunk ESCU (BITSAdmin Download File)
+    - Azure Sentinel (Suspicious BITSAdmin Activity)
+references:
+    - https://attack.mitre.org/techniques/T1197/
+    - https://attack.mitre.org/techniques/T1105/
+    - https://lolbas-project.github.io/lolbas/Binaries/Bitsadmin/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_bitsadmin_download.yml
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.persistence
+    - attack.t1197
+    - attack.t1105
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith: '\bitsadmin.exe'
+        - OriginalFileName: 'bitsadmin.exe'
+
+    # Download operations
+    selection_download:
+        CommandLine|contains:
+            - '/transfer'
+            - '/Transfer'
+            - '/addfile'
+            - '/AddFile'
+
+    # Remote URL in command
+    selection_url:
+        CommandLine|contains:
+            - 'http://'
+            - 'https://'
+            - 'ftp://'
+
+    # SetNotifyCmdLine - execute command on job completion (persistence)
+    selection_notify:
+        CommandLine|contains:
+            - 'SetNotifyCmdLine'
+            - '/SetNotifyFlags'
+
+    # Resume suspended job
+    selection_resume:
+        CommandLine|contains:
+            - '/resume'
+            - '/Resume'
+            - '/complete'
+            - '/Complete'
+
+    condition: selection_img and (selection_download or (selection_url) or selection_notify)
+falsepositives:
+    - Windows Update using BITS for downloads
+    - SCCM/MECM content distribution
+    - Legitimate software using BITS for background updates
+level: high
