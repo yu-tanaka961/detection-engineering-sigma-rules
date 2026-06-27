@@ -1,0 +1,69 @@
+title: Data Upload to Cloud Storage Service via CLI
+id: f7c3d9a1-1567-4de0-b8c7-unified-t1567002a01
+status: experimental
+description: |
+  Detects command-line tools uploading data to cloud storage services (AWS S3, Azure Blob,
+  Google Cloud Storage, Mega, Rclone, Backblaze) commonly abused for data exfiltration.
+  Unified detection logic from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel.
+references:
+  - https://attack.mitre.org/techniques/T1567/002/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.exfiltration
+  - attack.t1567.002
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_rclone:
+    - Image|endswith: '\rclone.exe'
+    - CommandLine|contains:
+        - 'rclone'
+        - 'rclone.exe'
+  selection_rclone_params:
+    CommandLine|contains:
+      - 'copy'
+      - 'sync'
+      - 'move'
+      - 'mount'
+  selection_aws:
+    CommandLine|contains:
+      - 'aws s3 cp'
+      - 'aws s3 sync'
+      - 'aws s3 mv'
+      - 'aws s3api put-object'
+  selection_azure:
+    CommandLine|contains:
+      - 'azcopy'
+      - 'az storage blob upload'
+      - 'az storage file upload'
+  selection_gcloud:
+    CommandLine|contains:
+      - 'gsutil cp'
+      - 'gsutil rsync'
+      - 'gcloud storage cp'
+  selection_mega:
+    - Image|endswith:
+        - '\megacmd.exe'
+        - '\MEGAcmdShell.exe'
+        - '\megaclient.exe'
+    - CommandLine|contains:
+        - 'mega-put'
+        - 'mega-sync'
+        - 'mega-cmd'
+  condition: (selection_rclone and selection_rclone_params) or selection_aws or selection_azure or selection_gcloud or selection_mega
+falsepositives:
+  - Legitimate cloud backup operations
+  - DevOps deployment scripts
+  - Authorized data migration
+level: high
+x-log-requirement:
+  source: Sysmon EventID 1 / Security 4688
+  requirement: Process command line logging enabled

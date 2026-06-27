@@ -1,0 +1,60 @@
+title: Volume Shadow Copy Deletion or Resize
+id: f7c3d9a1-1490-4de0-b8c7-unified-t1490a01
+status: experimental
+description: |
+  Detects deletion or manipulation of Volume Shadow Copies using vssadmin, wmic, and
+  PowerShell, a common ransomware precursor to prevent system recovery.
+  Unified detection logic from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel.
+references:
+  - https://attack.mitre.org/techniques/T1490/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.impact
+  - attack.t1490
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_vssadmin_delete:
+    Image|endswith: '\vssadmin.exe'
+    CommandLine|contains|all:
+      - 'delete'
+      - 'shadows'
+  selection_vssadmin_resize:
+    Image|endswith: '\vssadmin.exe'
+    CommandLine|contains|all:
+      - 'resize'
+      - 'shadowstorage'
+    CommandLine|contains:
+      - 'MaxSize='
+      - 'unbounded'
+  selection_wmic_shadow:
+    Image|endswith: '\wmic.exe'
+    CommandLine|contains|all:
+      - 'shadowcopy'
+      - 'delete'
+  selection_powershell_vss:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains:
+      - 'Get-WmiObject Win32_ShadowCopy'
+      - 'Win32_ShadowCopy'
+      - 'Remove-WmiObject'
+      - '.Delete()'
+  condition: 1 of selection_*
+falsepositives:
+  - Legitimate VSS management by backup software
+  - Storage management operations
+level: critical
+x-log-requirement:
+  source: Sysmon EventID 1 / Security 4688
+  requirement: Process command line logging enabled

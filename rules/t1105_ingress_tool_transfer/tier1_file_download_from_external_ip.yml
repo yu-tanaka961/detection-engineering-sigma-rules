@@ -1,0 +1,59 @@
+title: File Download from External IP via Suspicious Process
+id: f7c3d9a1-1105-4de0-b8c7-unified-t1105a02
+status: experimental
+description: |
+  Detects file creation events in user-writable directories by processes commonly used
+  for tool transfer (certutil, bitsadmin, powershell, mshta, cscript, wscript).
+  Unified detection logic from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel.
+references:
+  - https://attack.mitre.org/techniques/T1105/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.command_and_control
+  - attack.t1105
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: file_event
+  product: windows
+detection:
+  selection_process:
+    Image|endswith:
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\mshta.exe'
+      - '\cscript.exe'
+      - '\wscript.exe'
+      - '\curl.exe'
+  selection_target_path:
+    TargetFilename|contains:
+      - '\Users\'
+      - '\Temp\'
+      - '\ProgramData\'
+      - '\AppData\'
+      - '\Public\'
+  selection_extension:
+    TargetFilename|endswith:
+      - '.exe'
+      - '.dll'
+      - '.ps1'
+      - '.bat'
+      - '.cmd'
+      - '.vbs'
+      - '.js'
+      - '.hta'
+      - '.scr'
+  condition: selection_process and selection_target_path and selection_extension
+falsepositives:
+  - Legitimate software installers
+  - System management scripts
+level: high
+x-log-requirement:
+  source: Sysmon EventID 11
+  requirement: Sysmon FileCreate logging enabled

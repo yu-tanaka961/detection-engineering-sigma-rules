@@ -1,0 +1,80 @@
+title: Critical Service Stop via Command Line
+id: f7c3d9a1-1489-4de0-b8c7-unified-t1489a01
+status: experimental
+description: |
+  Detects stopping of critical services (antivirus, backup, database, Exchange) via
+  net stop, sc stop, and taskkill, commonly used by ransomware before encryption.
+  Unified detection logic from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel.
+references:
+  - https://attack.mitre.org/techniques/T1489/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.impact
+  - attack.t1489
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_net_stop:
+    Image|endswith:
+      - '\net.exe'
+      - '\net1.exe'
+    CommandLine|contains: 'stop'
+  selection_sc_stop:
+    Image|endswith: '\sc.exe'
+    CommandLine|contains:
+      - 'stop'
+      - 'config'
+      - 'delete'
+  selection_target_services:
+    CommandLine|contains:
+      - 'vss'
+      - 'sql'
+      - 'svc$'
+      - 'MSSQL'
+      - 'mysql'
+      - 'oracle'
+      - 'postgres'
+      - 'mongo'
+      - 'exchange'
+      - 'backup'
+      - 'veeam'
+      - 'acronis'
+      - 'sophos'
+      - 'symantec'
+      - 'mcafee'
+      - 'kaspersky'
+      - 'sentinel'
+      - 'defender'
+      - 'malware'
+      - 'antivirus'
+      - 'spooler'
+      - 'wuauserv'
+  selection_taskkill:
+    Image|endswith: '\taskkill.exe'
+    CommandLine|contains:
+      - 'sqlservr'
+      - 'mysqld'
+      - 'oracle'
+      - 'outlook'
+      - 'thunderbird'
+      - 'excel'
+      - 'winword'
+      - 'msaccess'
+  condition: ((selection_net_stop or selection_sc_stop) and selection_target_services) or selection_taskkill
+falsepositives:
+  - Legitimate service maintenance
+  - Patch management operations
+  - Database maintenance windows
+level: high
+x-log-requirement:
+  source: Sysmon EventID 1 / Security 4688
+  requirement: Process command line logging enabled

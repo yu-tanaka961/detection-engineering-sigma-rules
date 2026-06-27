@@ -1,0 +1,58 @@
+title: Multiple Recovery Inhibition Commands in Sequence
+id: f7c3d9a1-1490-4de0-b8c7-unified-t1490b01
+status: experimental
+description: |
+  Detects execution of multiple recovery inhibition techniques in rapid succession,
+  a strong indicator of ransomware pre-encryption activity. Combines VSS deletion,
+  boot config changes, backup catalog deletion, and safe boot disabling.
+  Unified detection logic from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel.
+references:
+  - https://attack.mitre.org/techniques/T1490/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.impact
+  - attack.t1490
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_vss:
+    CommandLine|contains:
+      - 'vssadmin delete shadows'
+      - 'vssadmin.exe delete shadows'
+      - 'wmic shadowcopy delete'
+  selection_bcdedit:
+    CommandLine|contains:
+      - 'bcdedit'
+      - 'bcdedit.exe'
+    CommandLine|contains:
+      - 'recoveryenabled'
+      - 'bootstatuspolicy'
+  selection_wbadmin:
+    CommandLine|contains:
+      - 'wbadmin delete'
+  selection_reagentc:
+    CommandLine|contains:
+      - 'reagentc /disable'
+      - 'reagentc.exe /disable'
+  selection_sysrestore:
+    CommandLine|contains:
+      - 'Disable-ComputerRestore'
+      - 'SystemRestorePointCreationFrequency'
+      - 'DisableSR'
+  condition: 2 of selection_*
+  timeframe: 5m
+falsepositives:
+  - System rebuild/re-imaging operations
+  - Very rare in legitimate use
+level: critical
+x-log-requirement:
+  source: Sysmon EventID 1 / Security 4688
+  requirement: Process command line logging enabled with temporal correlation

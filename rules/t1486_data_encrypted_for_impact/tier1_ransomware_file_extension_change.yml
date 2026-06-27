@@ -1,0 +1,66 @@
+title: Ransomware File Extension Modification Pattern
+id: f7c3d9a1-1486-4de0-b8c7-unified-t1486a01
+status: experimental
+description: |
+  Detects mass file rename operations adding known ransomware extensions or suspicious
+  encryption-related file operations. Monitors Sysmon FileCreate for bulk extension changes.
+  Unified detection logic from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel.
+references:
+  - https://attack.mitre.org/techniques/T1486/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.impact
+  - attack.t1486
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: file_event
+  product: windows
+detection:
+  selection_ransom_note:
+    TargetFilename|contains:
+      - 'DECRYPT'
+      - 'RECOVER'
+      - 'README'
+      - 'HOW_TO'
+      - 'RESTORE'
+      - 'HELP_ME'
+    TargetFilename|endswith:
+      - '.txt'
+      - '.html'
+      - '.hta'
+  selection_ransom_extension:
+    TargetFilename|endswith:
+      - '.encrypted'
+      - '.locked'
+      - '.crypto'
+      - '.crypt'
+      - '.enc'
+      - '.lockbit'
+      - '.blackcat'
+      - '.alphv'
+      - '.royal'
+      - '.clop'
+      - '.conti'
+      - '.ryuk'
+      - '.maze'
+      - '.revil'
+      - '.sodinokibi'
+      - '.hive'
+      - '.play'
+      - '.akira'
+      - '.rhysida'
+      - '.blackbasta'
+  condition: 1 of selection_*
+falsepositives:
+  - Legitimate encryption software
+  - File backup solutions with .enc extension
+level: critical
+x-log-requirement:
+  source: Sysmon EventID 11
+  requirement: Sysmon FileCreate logging enabled

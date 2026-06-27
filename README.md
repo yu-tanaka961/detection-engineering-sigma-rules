@@ -212,10 +212,30 @@ detection-engineering-sigma-rules/
 │   │   ├── tier1_ssh_tunnel_suspicious_execution.yml
 │   │   ├── tier1_dns_tunnel_indicators.yml
 │   │   └── tier2_tunnel_network_connection_anomaly.yml
-│   └── t1090_proxy/                     # MITRE ATT&CK T1090
-│       ├── tier1_proxy_tool_execution.yml
-│       ├── tier1_web_shell_proxy_traffic.yml
-│       └── tier2_multi_hop_proxy_indicators.yml
+│   ├── t1090_proxy/                     # MITRE ATT&CK T1090
+│   │   ├── tier1_proxy_tool_execution.yml
+│   │   ├── tier1_web_shell_proxy_traffic.yml
+│   │   └── tier2_multi_hop_proxy_indicators.yml
+│   ├── t1105_ingress_tool_transfer/     # MITRE ATT&CK T1105
+│   │   ├── tier1_remote_file_download_tools.yml
+│   │   ├── tier1_file_download_from_external_ip.yml
+│   │   └── tier2_tool_transfer_network_connection.yml
+│   ├── t1567_002_exfil_to_cloud_storage/ # MITRE ATT&CK T1567.002
+│   │   ├── tier1_cloud_storage_upload_commands.yml
+│   │   ├── tier1_browser_bulk_upload_to_cloud.yml
+│   │   └── tier2_rclone_config_or_renamed_execution.yml
+│   ├── t1486_data_encrypted_for_impact/  # MITRE ATT&CK T1486
+│   │   ├── tier1_ransomware_file_extension_change.yml
+│   │   ├── tier1_ransomware_encryption_tool_execution.yml
+│   │   └── tier2_ransomware_behavioral_indicators.yml
+│   ├── t1490_inhibit_system_recovery/    # MITRE ATT&CK T1490
+│   │   ├── tier1_vssadmin_shadow_delete.yml
+│   │   ├── tier1_bcdedit_recovery_disable.yml
+│   │   └── tier2_multiple_recovery_inhibition_commands.yml
+│   └── t1489_service_stop/               # MITRE ATT&CK T1489
+│       ├── tier1_critical_service_stop_commands.yml
+│       ├── tier1_powershell_service_stop.yml
+│       └── tier2_mass_service_stop_sequence.yml
 └── docs/
     ├── t1059_001_cross_source_analysis.md
     ├── t1003_006_cross_source_analysis.md
@@ -267,7 +287,12 @@ detection-engineering-sigma-rules/
     ├── t1071_001_cross_source_analysis.md
     ├── t1219_cross_source_analysis.md
     ├── t1572_cross_source_analysis.md
-    └── t1090_cross_source_analysis.md
+    ├── t1090_cross_source_analysis.md
+    ├── t1105_cross_source_analysis.md
+    ├── t1567_002_cross_source_analysis.md
+    ├── t1486_cross_source_analysis.md
+    ├── t1490_cross_source_analysis.md
+    └── t1489_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -787,6 +812,56 @@ detection-engineering-sigma-rules/
 | [Web Shell Proxy Traffic](rules/t1090_proxy/tier1_web_shell_proxy_traffic.yml) | 1 | Critical | file_event | High |
 | [Multi-Hop Proxy / Tor](rules/t1090_proxy/tier2_multi_hop_proxy_indicators.yml) | 2 | High | process_creation | High |
 
+### T1105 — Ingress Tool Transfer
+
+3 unified Sigma rules detecting tool transfer via LOLBin downloads, suspicious file creation in user directories, and LOLBin outbound network connections.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Remote File Download Tools](rules/t1105_ingress_tool_transfer/tier1_remote_file_download_tools.yml) | 1 | High | process_creation | Medium |
+| [File Download from External IP](rules/t1105_ingress_tool_transfer/tier1_file_download_from_external_ip.yml) | 1 | High | file_event | High |
+| [Tool Transfer Network Connection](rules/t1105_ingress_tool_transfer/tier2_tool_transfer_network_connection.yml) | 2 | High | network_connection | High |
+
+### T1567.002 — Exfiltration to Cloud Storage
+
+3 unified Sigma rules detecting data exfiltration to cloud storage via CLI tools (rclone, aws, azcopy), PowerShell/curl uploads, and Rclone renamed binary execution.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Cloud Storage Upload Commands](rules/t1567_002_exfil_to_cloud_storage/tier1_cloud_storage_upload_commands.yml) | 1 | High | process_creation | Medium |
+| [Web Upload to Cloud Storage](rules/t1567_002_exfil_to_cloud_storage/tier1_browser_bulk_upload_to_cloud.yml) | 1 | High | process_creation | Medium |
+| [Rclone Config / Renamed Execution](rules/t1567_002_exfil_to_cloud_storage/tier2_rclone_config_or_renamed_execution.yml) | 2 | High | process_creation | High |
+
+### T1486 — Data Encrypted for Impact
+
+3 unified Sigma rules detecting ransomware encryption via file extension changes, encryption tool execution, and PowerShell encryption behavioral patterns.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Ransomware File Extension Change](rules/t1486_data_encrypted_for_impact/tier1_ransomware_file_extension_change.yml) | 1 | Critical | file_event | High |
+| [Encryption Tool Execution](rules/t1486_data_encrypted_for_impact/tier1_ransomware_encryption_tool_execution.yml) | 1 | High | process_creation | Medium |
+| [Ransomware Behavioral Indicators](rules/t1486_data_encrypted_for_impact/tier2_ransomware_behavioral_indicators.yml) | 2 | Critical | ps_script (4104) | High |
+
+### T1490 — Inhibit System Recovery
+
+3 unified Sigma rules detecting system recovery inhibition via VSS deletion, boot configuration tampering, and multiple recovery inhibition command sequences.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [VSS Shadow Copy Delete](rules/t1490_inhibit_system_recovery/tier1_vssadmin_shadow_delete.yml) | 1 | Critical | process_creation | High |
+| [BCDEdit/Recovery Disable](rules/t1490_inhibit_system_recovery/tier1_bcdedit_recovery_disable.yml) | 1 | Critical | process_creation | High |
+| [Multiple Recovery Inhibition](rules/t1490_inhibit_system_recovery/tier2_multiple_recovery_inhibition_commands.yml) | 2 | Critical | process_creation | High |
+
+### T1489 — Service Stop
+
+3 unified Sigma rules detecting malicious service stopping via CLI commands, PowerShell/WMI, and mass service stop sequences indicating ransomware activity.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Critical Service Stop Commands](rules/t1489_service_stop/tier1_critical_service_stop_commands.yml) | 1 | High | process_creation | Medium |
+| [PowerShell/WMI Service Stop](rules/t1489_service_stop/tier1_powershell_service_stop.yml) | 1 | High | process_creation | Medium |
+| [Mass Service Stop Sequence](rules/t1489_service_stop/tier2_mass_service_stop_sequence.yml) | 2 | Critical | process_creation | High |
+
 ### Tiering Strategy
 
 - **Tier 1**: High-confidence, broad-coverage rules. Deploy immediately with minimal tuning.
@@ -898,6 +973,11 @@ Rules use extended tags to encode detection quality dimensions:
 - [MITRE ATT&CK T1219](https://attack.mitre.org/techniques/T1219/)
 - [MITRE ATT&CK T1572](https://attack.mitre.org/techniques/T1572/)
 - [MITRE ATT&CK T1090](https://attack.mitre.org/techniques/T1090/)
+- [MITRE ATT&CK T1105](https://attack.mitre.org/techniques/T1105/)
+- [MITRE ATT&CK T1567.002](https://attack.mitre.org/techniques/T1567/002/)
+- [MITRE ATT&CK T1486](https://attack.mitre.org/techniques/T1486/)
+- [MITRE ATT&CK T1490](https://attack.mitre.org/techniques/T1490/)
+- [MITRE ATT&CK T1489](https://attack.mitre.org/techniques/T1489/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
@@ -953,6 +1033,11 @@ Rules use extended tags to encode detection quality dimensions:
 - [T1219 Cross-source analysis](docs/t1219_cross_source_analysis.md)
 - [T1572 Cross-source analysis](docs/t1572_cross_source_analysis.md)
 - [T1090 Cross-source analysis](docs/t1090_cross_source_analysis.md)
+- [T1105 Cross-source analysis](docs/t1105_cross_source_analysis.md)
+- [T1567.002 Cross-source analysis](docs/t1567_002_cross_source_analysis.md)
+- [T1486 Cross-source analysis](docs/t1486_cross_source_analysis.md)
+- [T1490 Cross-source analysis](docs/t1490_cross_source_analysis.md)
+- [T1489 Cross-source analysis](docs/t1489_cross_source_analysis.md)
 
 ## Author
 

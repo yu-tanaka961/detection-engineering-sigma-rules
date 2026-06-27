@@ -1,0 +1,60 @@
+title: Boot Configuration or Recovery Environment Tampering
+id: f7c3d9a1-1490-4de0-b8c7-unified-t1490a02
+status: experimental
+description: |
+  Detects modification of boot configuration to disable recovery options using bcdedit,
+  reagentc, and wbadmin, common ransomware technique to prevent system restoration.
+  Unified detection logic from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel.
+references:
+  - https://attack.mitre.org/techniques/T1490/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.impact
+  - attack.t1490
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_bcdedit_recovery:
+    Image|endswith: '\bcdedit.exe'
+    CommandLine|contains:
+      - 'recoveryenabled no'
+      - 'recoveryenabled No'
+      - '{default} recoveryenabled'
+      - 'bootstatuspolicy ignoreallfailures'
+      - 'safeboot'
+  selection_reagentc:
+    Image|endswith: '\reagentc.exe'
+    CommandLine|contains:
+      - '/disable'
+      - '-disable'
+  selection_wbadmin_delete:
+    Image|endswith: '\wbadmin.exe'
+    CommandLine|contains:
+      - 'delete catalog'
+      - 'delete systemstatebackup'
+      - 'delete backup'
+  selection_backup_delete:
+    Image|endswith:
+      - '\wbadmin.exe'
+      - '\cmd.exe'
+      - '\powershell.exe'
+    CommandLine|contains:
+      - 'delete catalog -quiet'
+      - 'wbadmin delete'
+  condition: 1 of selection_*
+falsepositives:
+  - IT administrators modifying boot configuration
+  - System deployment scripts
+level: critical
+x-log-requirement:
+  source: Sysmon EventID 1 / Security 4688
+  requirement: Process command line logging enabled

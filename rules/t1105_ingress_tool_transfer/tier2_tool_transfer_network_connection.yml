@@ -1,0 +1,74 @@
+title: Suspicious Process Outbound Connection for Tool Transfer
+id: f7c3d9a1-1105-4de0-b8c7-unified-t1105b01
+status: experimental
+description: |
+  Detects outbound network connections from LOLBins and scripting engines to external
+  hosts on HTTP/HTTPS ports, indicating potential ingress tool transfer activity.
+  Unified detection logic from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel.
+references:
+  - https://attack.mitre.org/techniques/T1105/
+  - https://lolbas-project.github.io/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.command_and_control
+  - attack.t1105
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: network_connection
+  product: windows
+detection:
+  selection_process:
+    Image|endswith:
+      - '\certutil.exe'
+      - '\mshta.exe'
+      - '\regsvr32.exe'
+      - '\rundll32.exe'
+      - '\cscript.exe'
+      - '\wscript.exe'
+      - '\msiexec.exe'
+      - '\installutil.exe'
+      - '\cmstp.exe'
+  selection_port:
+    DestinationPort:
+      - 80
+      - 443
+      - 8080
+      - 8443
+      - 4443
+  selection_initiated:
+    Initiated: 'true'
+  filter_local:
+    DestinationIp|startswith:
+      - '10.'
+      - '172.16.'
+      - '172.17.'
+      - '172.18.'
+      - '172.19.'
+      - '172.20.'
+      - '172.21.'
+      - '172.22.'
+      - '172.23.'
+      - '172.24.'
+      - '172.25.'
+      - '172.26.'
+      - '172.27.'
+      - '172.28.'
+      - '172.29.'
+      - '172.30.'
+      - '172.31.'
+      - '192.168.'
+      - '127.'
+  condition: selection_process and selection_port and selection_initiated and not filter_local
+falsepositives:
+  - Legitimate software update mechanisms
+  - CMSTP/MSIExec for enterprise software deployment
+level: high
+x-log-requirement:
+  source: Sysmon EventID 3
+  requirement: Sysmon NetworkConnect logging enabled

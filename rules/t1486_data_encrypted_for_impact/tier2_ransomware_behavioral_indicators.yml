@@ -1,0 +1,58 @@
+title: Ransomware Behavioral Indicators via ScriptBlock
+id: f7c3d9a1-1486-4de0-b8c7-unified-t1486b01
+status: experimental
+description: |
+  Detects ransomware behavioral patterns in PowerShell ScriptBlock logs including
+  file enumeration followed by encryption, ransom note generation, and wallpaper changes.
+  Unified detection logic from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel.
+references:
+  - https://attack.mitre.org/techniques/T1486/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.impact
+  - attack.t1486
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  product: windows
+  category: ps_script
+  definition: PowerShell ScriptBlock Logging (EventID 4104) must be enabled
+detection:
+  selection_encryption_api:
+    ScriptBlockText|contains:
+      - 'System.Security.Cryptography'
+      - 'AesCryptoServiceProvider'
+      - 'RijndaelManaged'
+      - 'RSACryptoServiceProvider'
+      - 'CryptoStream'
+      - 'ICryptoTransform'
+  selection_file_ops:
+    ScriptBlockText|contains:
+      - 'Get-ChildItem'
+      - 'Get-Content'
+      - 'Set-Content'
+      - '[IO.File]::ReadAllBytes'
+      - '[IO.File]::WriteAllBytes'
+  selection_ransom_behavior:
+    ScriptBlockText|contains:
+      - 'wallpaper'
+      - 'DECRYPT'
+      - 'ransom'
+      - 'bitcoin'
+      - 'btc'
+      - '.onion'
+      - 'YOUR FILES'
+      - 'payment'
+  condition: (selection_encryption_api and selection_file_ops) or selection_ransom_behavior
+falsepositives:
+  - Legitimate PowerShell encryption scripts
+  - Security tools testing encryption
+level: critical
+x-log-requirement:
+  source: PowerShell ScriptBlock Logging
+  requirement: EventID 4104 must be enabled

@@ -1,0 +1,66 @@
+title: Rclone Configuration Creation or Renamed Binary Execution
+id: f7c3d9a1-1567-4de0-b8c7-unified-t1567002b01
+status: experimental
+description: |
+  Detects Rclone configuration file creation or execution of renamed Rclone binaries,
+  common technique used by ransomware groups for data exfiltration staging.
+  Unified detection logic from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel.
+references:
+  - https://attack.mitre.org/techniques/T1567/002/
+  - https://research.nccgroup.com/2021/05/27/detecting-rclone-an-effective-tool-for-exfiltration/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.exfiltration
+  - attack.t1567.002
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_rclone_flags:
+    CommandLine|contains:
+      - '--config'
+      - '--no-check-certificate'
+      - '--auto-confirm'
+      - '--multi-thread-streams'
+      - '--transfers'
+      - '--bwlimit'
+  selection_rclone_remote:
+    CommandLine|contains:
+      - ':s3:'
+      - ':azureblob:'
+      - ':gcs:'
+      - ':mega:'
+      - ':dropbox:'
+      - ':onedrive:'
+      - ':ftp:'
+      - ':sftp:'
+      - ':webdav:'
+  selection_rclone_renamed:
+    CommandLine|contains:
+      - 'rclone'
+    Image|endswith:
+      - '.exe'
+    - Image|contains:
+        - '\Temp\'
+        - '\AppData\'
+        - '\ProgramData\'
+        - '\Public\'
+        - '\Downloads\'
+  filter_legitimate:
+    Image|endswith: '\rclone.exe'
+    Image|contains: '\Program Files'
+  condition: (selection_rclone_flags and selection_rclone_remote) or (selection_rclone_renamed and not filter_legitimate)
+falsepositives:
+  - Legitimate Rclone usage for cloud backup
+  - Authorized data migration scripts
+level: high
+x-log-requirement:
+  source: Sysmon EventID 1 / Security 4688
+  requirement: Process command line logging enabled
