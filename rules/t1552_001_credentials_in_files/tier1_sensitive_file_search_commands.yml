@@ -1,0 +1,102 @@
+title: Sensitive File Search for Credentials
+id: f7c3d9a1-2801-4de0-b8c7-unified-t1552001
+related:
+    - id: d4e5f6a7-8b9c-0d1e-2f3a-unified-t1552001s  # SigmaHQ cred file search
+      type: derived
+status: test
+description: |
+    Detects command-line searches for files likely containing credentials
+    such as password files, configuration files with embedded secrets,
+    SSH keys, and cloud credential files. Adversaries commonly search
+    for these files after initial access to escalate privileges or
+    move laterally.
+    Unified from:
+    - SigmaHQ proc_creation_win_susp_cred_file_search.yml
+    - Elastic credential_access_sensitive_file_search.toml
+    - Splunk ESCU (Credential File Search)
+    - Azure Sentinel (Sensitive File Discovery)
+references:
+    - https://attack.mitre.org/techniques/T1552/001/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1552.001
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_search_tools:
+        Image|endswith:
+            - '\findstr.exe'
+            - '\find.exe'
+            - '\where.exe'
+        CommandLine|contains:
+            - 'password'
+            - 'credential'
+            - 'secret'
+            - 'passwd'
+            - 'cred'
+            - '.pem'
+            - '.key'
+            - '.pfx'
+            - '.p12'
+            - 'id_rsa'
+            - 'id_dsa'
+            - 'id_ecdsa'
+            - 'id_ed25519'
+
+    selection_dir_search:
+        Image|endswith: '\cmd.exe'
+        CommandLine|contains:
+            - 'dir '
+            - 'dir/s'
+        CommandLine|contains:
+            - 'password'
+            - '*.config'
+            - '*.xml'
+            - '*.ini'
+            - '*.txt'
+            - 'web.config'
+            - 'unattend.xml'
+            - '.pgpass'
+            - '.my.cnf'
+            - '*.kdbx'
+
+    selection_ps_search:
+        CommandLine|contains:
+            - 'Get-ChildItem'
+            - 'gci '
+            - 'ls -Recurse'
+            - 'Select-String'
+        CommandLine|contains:
+            - 'password'
+            - 'credential'
+            - 'secret'
+            - '.pem'
+            - '.key'
+            - 'id_rsa'
+            - 'web.config'
+            - 'appsettings'
+
+    # Cloud credential files
+    selection_cloud_creds:
+        CommandLine|contains:
+            - '.aws\credentials'
+            - '.azure\accessTokens'
+            - '.azure\azureProfile'
+            - 'gcloud\credentials.db'
+            - 'gcloud\access_tokens.db'
+            - '.kube\config'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Security auditing tools scanning for exposed credentials
+    - Compliance scanning for hardcoded secrets
+level: medium

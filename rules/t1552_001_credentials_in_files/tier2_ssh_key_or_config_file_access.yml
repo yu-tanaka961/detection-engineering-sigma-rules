@@ -1,0 +1,77 @@
+title: SSH Private Key or Configuration File Access
+id: f7c3d9a1-2803-4de0-b8c7-unified-t1552001
+related:
+    - id: f6a7b8c9-0d1e-2f3a-4b5c-unified-t1552001ssh  # Elastic SSH key
+      type: derived
+status: test
+description: |
+    Detects suspicious access to SSH private key files and configuration
+    files. Adversaries collect SSH keys to authenticate to remote systems
+    without passwords. Also detects access to KeePass databases, PuTTY
+    session data, and other credential stores commonly found on Windows
+    systems.
+    Unified from:
+    - Elastic credential_access_ssh_key_theft.toml
+    - SigmaHQ file_access_win_ssh_key.yml
+    - Splunk ESCU (SSH Key Theft)
+references:
+    - https://attack.mitre.org/techniques/T1552/001/
+    - https://attack.mitre.org/techniques/T1552/004/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1552.001
+    - attack.t1552.004
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-fileaccess
+logsource:
+    category: file_access
+    product: windows
+detection:
+    # SSH private keys
+    selection_ssh_keys:
+        TargetFilename|contains: '\.ssh\'
+        TargetFilename|endswith:
+            - '\id_rsa'
+            - '\id_dsa'
+            - '\id_ecdsa'
+            - '\id_ed25519'
+            - '\known_hosts'
+            - '\authorized_keys'
+            - '\config'
+
+    # PuTTY session/key files
+    selection_putty:
+        TargetFilename|contains:
+            - '\.putty\sessions\'
+            - '\.putty\sshhostkeys'
+        TargetFilename|endswith:
+            - '.ppk'
+
+    # KeePass databases
+    selection_keepass:
+        TargetFilename|endswith:
+            - '.kdbx'
+            - '.kdb'
+
+    # Filter: legitimate SSH clients
+    filter_ssh_clients:
+        Image|endswith:
+            - '\ssh.exe'
+            - '\scp.exe'
+            - '\sftp.exe'
+            - '\putty.exe'
+            - '\pageant.exe'
+            - '\KeePass.exe'
+            - '\keepassxc.exe'
+
+    condition: (selection_ssh_keys or selection_putty or selection_keepass) and not filter_ssh_clients
+falsepositives:
+    - SSH client applications accessing keys normally
+    - Backup software accessing credential stores
+level: high

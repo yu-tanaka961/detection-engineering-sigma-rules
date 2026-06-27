@@ -1,0 +1,73 @@
+title: SAM/SYSTEM File Copy from Disk or Shadow Copy
+id: f7c3d9a1-2903-4de0-b8c7-unified-t1003002
+related:
+    - id: c3d4e5f6-7a8b-9c0d-unified-t1003002file  # Elastic SAM file copy
+      type: derived
+status: test
+description: |
+    Detects attempts to copy SAM, SYSTEM, or SECURITY files directly from
+    disk, including from Volume Shadow Copies. Since these files are locked
+    by the OS during normal operation, adversaries often access them via
+    shadow copies or use raw disk access tools. Sysmon EventID 11 captures
+    file creation events when these files are copied to new locations.
+    Unified from:
+    - Elastic credential_access_sam_file_copy.toml
+    - SigmaHQ sysmon_sam_file_copy.yml
+    - Splunk ESCU (SAM File Copy)
+references:
+    - https://attack.mitre.org/techniques/T1003/002/
+    - https://www.ired.team/offensive-security/credential-access-and-credential-dumping/dumping-hashes-from-sam-registry
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1003.002
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-filecreate-11
+logsource:
+    category: file_event
+    product: windows
+detection:
+    # SAM/SYSTEM/SECURITY files created outside normal locations
+    selection_sam_copy:
+        TargetFilename|endswith:
+            - '\sam'
+            - '\sam.save'
+            - '\sam.bak'
+            - '\sam.hiv'
+            - '\sam.dmp'
+            - '\system'
+            - '\system.save'
+            - '\system.bak'
+            - '\system.hiv'
+            - '\security'
+            - '\security.save'
+            - '\security.bak'
+            - '\security.hiv'
+
+    # Exclude normal system locations
+    filter_system_path:
+        TargetFilename|startswith:
+            - 'C:\Windows\System32\config\'
+            - 'C:\Windows\ServiceProfiles\'
+            - 'C:\Windows\Temp\MpCmdRun'
+
+    # Suspicious copy destinations
+    selection_susp_dest:
+        TargetFilename|contains:
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\Downloads\'
+            - '\Desktop\'
+            - '\ProgramData\'
+
+    condition: selection_sam_copy and selection_susp_dest and not filter_system_path
+falsepositives:
+    - System backup operations
+    - Windows repair and recovery tools
+level: critical

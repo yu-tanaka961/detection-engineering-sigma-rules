@@ -1,0 +1,57 @@
+title: NTDS.dit Dump File Creation on Disk
+id: f7c3d9a1-3003-4de0-b8c7-unified-t1003003
+related:
+    - id: f6a7b8c9-0d1e-2f3a-unified-t1003003dump  # Elastic NTDS dump file
+      type: derived
+status: test
+description: |
+    Detects creation of NTDS.dit copies or IFM media files on disk,
+    which indicates Active Directory credential extraction. ntdsutil
+    IFM creates files in a user-specified directory, while manual copy
+    operations create ntds.dit files in non-standard locations.
+    Sysmon EventID 11 captures these file creation events.
+    Unified from:
+    - Elastic credential_access_ntds_dump_file_creation.toml
+    - SigmaHQ sysmon_ntds_dit_file_creation.yml
+    - Splunk ESCU (NTDS Dump File)
+references:
+    - https://attack.mitre.org/techniques/T1003/003/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1003.003
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-filecreate-11
+logsource:
+    category: file_event
+    product: windows
+detection:
+    # NTDS.dit copy outside normal AD path
+    selection_ntds_file:
+        TargetFilename|endswith:
+            - '\ntds.dit'
+            - '\ntds.dit.bak'
+            - '\ntds.dit.copy'
+
+    filter_normal_path:
+        TargetFilename|startswith: 'C:\Windows\NTDS\'
+
+    # IFM media creation directory
+    selection_ifm:
+        TargetFilename|contains: '\Active Directory\'
+        TargetFilename|endswith: '\ntds.dit'
+
+    filter_ifm_normal:
+        Image|endswith: '\ntdsutil.exe'
+        TargetFilename|startswith: 'C:\Windows\NTDS\'
+
+    condition: (selection_ntds_file and not filter_normal_path) or (selection_ifm and not filter_ifm_normal)
+falsepositives:
+    - Legitimate ntdsutil IFM for domain controller promotion
+    - Authorized AD backup procedures
+level: critical

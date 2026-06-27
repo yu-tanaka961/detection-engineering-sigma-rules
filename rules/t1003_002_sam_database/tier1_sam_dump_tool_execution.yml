@@ -1,0 +1,70 @@
+title: SAM Database Dumping Tool Execution
+id: f7c3d9a1-2902-4de0-b8c7-unified-t1003002
+related:
+    - id: b2c3d4e5-6f7a-8b9c-unified-t1003002tool  # Elastic SAM dump tool
+      type: derived
+status: test
+description: |
+    Detects execution of known tools that dump credentials from the
+    SAM database. Covers secretsdump, pwdump, fgdump, gsecdump, and
+    Mimikatz lsadump::sam module. Also detects the use of built-in
+    Windows tools like ntdsutil in credential extraction mode.
+    Unified from:
+    - Elastic credential_access_sam_dump_tools.toml
+    - SigmaHQ proc_creation_win_sam_dump.yml
+    - Splunk ESCU (SAM Dump Tools)
+references:
+    - https://attack.mitre.org/techniques/T1003/002/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1003.002
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # Mimikatz SAM dump
+    selection_mimikatz_sam:
+        CommandLine|contains:
+            - 'lsadump::sam'
+            - 'lsadump::cache'
+            - 'lsadump::secrets'
+
+    # Known SAM dump tools
+    selection_tools:
+        Image|endswith:
+            - '\pwdump.exe'
+            - '\pwdump7.exe'
+            - '\fgdump.exe'
+            - '\gsecdump.exe'
+            - '\cachedump.exe'
+            - '\wce.exe'
+
+    selection_tool_names:
+        CommandLine|contains:
+            - 'secretsdump'
+            - 'pwdump'
+            - 'fgdump'
+            - 'gsecdump'
+            - 'crackmapexec'
+            - 'Invoke-SecretsDump'
+
+    # impacket secretsdump
+    selection_impacket:
+        CommandLine|contains:
+            - 'secretsdump.py'
+            - '-sam '
+            - '-system '
+            - '-security '
+
+    condition: 1 of selection_*
+falsepositives:
+    - Authorized penetration testing
+    - Security assessment tools
+level: critical

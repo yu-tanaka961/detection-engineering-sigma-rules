@@ -1,0 +1,74 @@
+title: Access to Unattend.xml or Sysprep Credential Files
+id: f7c3d9a1-2802-4de0-b8c7-unified-t1552001
+related:
+    - id: e5f6a7b8-9c0d-1e2f-3a4b-unified-t1552001u  # Elastic unattend
+      type: derived
+status: test
+description: |
+    Detects access to Windows deployment files (unattend.xml, sysprep.xml,
+    Panther\unattend) that may contain plaintext or Base64-encoded local
+    administrator passwords. These files are leftover from Windows
+    deployment and are a well-known source of credentials.
+    Unified from:
+    - Elastic credential_access_unattend_xml.toml
+    - SigmaHQ proc_creation_win_unattend_cred.yml
+    - Splunk ESCU (Unattend XML Credential Access)
+references:
+    - https://attack.mitre.org/techniques/T1552/001/
+    - https://pentestlab.blog/2017/06/19/extracting-credentials-from-unattend-xml/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1552.001
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # Accessing unattend/sysprep files
+    selection_cmd_access:
+        CommandLine|contains:
+            - 'unattend.xml'
+            - 'unattended.xml'
+            - 'unattend.txt'
+            - 'sysprep.xml'
+            - 'sysprep.inf'
+            - '\Panther\unattend'
+            - '\Panther\Unattend'
+            - 'autounattend.xml'
+
+    # Type/cat/Get-Content on deployment files
+    selection_read_files:
+        CommandLine|contains:
+            - 'type '
+            - 'Get-Content'
+            - 'gc '
+            - 'cat '
+            - 'more '
+        CommandLine|contains:
+            - 'unattend'
+            - 'sysprep'
+            - 'Panther'
+
+    # Copy operations on deployment files
+    selection_copy:
+        CommandLine|contains:
+            - 'copy '
+            - 'xcopy'
+            - 'Copy-Item'
+            - 'robocopy'
+        CommandLine|contains:
+            - 'unattend'
+            - 'sysprep'
+            - 'Panther'
+
+    condition: 1 of selection_*
+falsepositives:
+    - System administrators reviewing deployment configurations
+    - Windows deployment tooling
+level: high

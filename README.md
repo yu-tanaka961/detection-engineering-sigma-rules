@@ -116,10 +116,34 @@ detection-engineering-sigma-rules/
 │   │   ├── tier1_lsass_memory_access_suspicious.yml
 │   │   ├── tier1_credential_dumping_tool_execution.yml
 │   │   └── tier2_lsass_dump_file_creation.yml
-│   └── t1558_003_kerberoasting/       # MITRE ATT&CK T1558.003
-│       ├── tier1_kerberos_tgs_request_anomaly.yml
-│       ├── tier1_kerberoasting_tool_execution.yml
-│       └── tier2_kerberos_rc4_downgrade.yml
+│   ├── t1558_003_kerberoasting/       # MITRE ATT&CK T1558.003
+│   │   ├── tier1_kerberos_tgs_request_anomaly.yml
+│   │   ├── tier1_kerberoasting_tool_execution.yml
+│   │   └── tier2_kerberos_rc4_downgrade.yml
+│   ├── t1555_credentials_from_password_stores/ # MITRE ATT&CK T1555
+│   │   ├── tier1_browser_credential_access.yml
+│   │   ├── tier1_credential_manager_access.yml
+│   │   └── tier2_dpapi_masterkey_access.yml
+│   ├── t1552_001_credentials_in_files/ # MITRE ATT&CK T1552.001
+│   │   ├── tier1_sensitive_file_search_commands.yml
+│   │   ├── tier1_unattend_xml_access.yml
+│   │   └── tier2_ssh_key_or_config_file_access.yml
+│   ├── t1003_002_sam_database/        # MITRE ATT&CK T1003.002
+│   │   ├── tier1_sam_registry_hive_export.yml
+│   │   ├── tier1_sam_dump_tool_execution.yml
+│   │   └── tier2_sam_file_copy_from_disk.yml
+│   ├── t1003_003_ntds/                # MITRE ATT&CK T1003.003
+│   │   ├── tier1_ntdsutil_credential_dump.yml
+│   │   ├── tier1_ntds_file_access_suspicious.yml
+│   │   └── tier2_ntds_dump_file_creation.yml
+│   ├── t1557_001_llmnr_nbtns_poisoning/ # MITRE ATT&CK T1557.001
+│   │   ├── tier1_responder_tool_execution.yml
+│   │   ├── tier1_llmnr_nbtns_config_change.yml
+│   │   └── tier2_smb_ntlm_relay_indicators.yml
+│   └── t1552_006_gpp_credentials/     # MITRE ATT&CK T1552.006
+│       ├── tier1_gpp_password_discovery.yml
+│       ├── tier1_sysvol_gpp_file_access.yml
+│       └── tier2_gpp_cpassword_decryption.yml
 └── docs/
     ├── t1059_001_cross_source_analysis.md
     ├── t1003_006_cross_source_analysis.md
@@ -147,7 +171,13 @@ detection-engineering-sigma-rules/
     ├── t1140_cross_source_analysis.md
     ├── t1685_cross_source_analysis.md
     ├── t1003_001_cross_source_analysis.md
-    └── t1558_003_cross_source_analysis.md
+    ├── t1558_003_cross_source_analysis.md
+    ├── t1555_cross_source_analysis.md
+    ├── t1552_001_cross_source_analysis.md
+    ├── t1003_002_cross_source_analysis.md
+    ├── t1003_003_cross_source_analysis.md
+    ├── t1557_001_cross_source_analysis.md
+    └── t1552_006_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -427,6 +457,66 @@ detection-engineering-sigma-rules/
 | [Kerberoasting Tool Execution](rules/t1558_003_kerberoasting/tier1_kerberoasting_tool_execution.yml) | 1 | High | process_creation | Medium |
 | [RC4 Encryption Downgrade](rules/t1558_003_kerberoasting/tier2_kerberos_rc4_downgrade.yml) | 2 | Medium | security (4769) | High |
 
+### T1555 — Credentials from Password Stores
+
+3 unified Sigma rules detecting credential theft from browser password stores, Windows Credential Manager, and DPAPI master keys.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Browser Credential Access](rules/t1555_credentials_from_password_stores/tier1_browser_credential_access.yml) | 1 | High | process_creation | Medium |
+| [Credential Manager Access](rules/t1555_credentials_from_password_stores/tier1_credential_manager_access.yml) | 1 | High | process_creation | Medium |
+| [DPAPI Master Key Access](rules/t1555_credentials_from_password_stores/tier2_dpapi_masterkey_access.yml) | 2 | High | process_creation | High |
+
+### T1552.001 — Unsecured Credentials: Credentials In Files
+
+3 unified Sigma rules detecting credential harvesting from files via password searches, unattend.xml access, and SSH key theft.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Sensitive File Search Commands](rules/t1552_001_credentials_in_files/tier1_sensitive_file_search_commands.yml) | 1 | Medium | process_creation | Medium |
+| [Unattend XML Access](rules/t1552_001_credentials_in_files/tier1_unattend_xml_access.yml) | 1 | High | process_creation | High |
+| [SSH Key / Config File Access](rules/t1552_001_credentials_in_files/tier2_ssh_key_or_config_file_access.yml) | 2 | High | process_creation | High |
+
+### T1003.002 — OS Credential Dumping: SAM
+
+3 unified Sigma rules detecting SAM database credential dumping via registry export, known tools, and file copy.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [SAM Registry Hive Export](rules/t1003_002_sam_database/tier1_sam_registry_hive_export.yml) | 1 | Critical | process_creation | High |
+| [SAM Dump Tool Execution](rules/t1003_002_sam_database/tier1_sam_dump_tool_execution.yml) | 1 | Critical | process_creation | Medium |
+| [SAM File Copy from Disk](rules/t1003_002_sam_database/tier2_sam_file_copy_from_disk.yml) | 2 | Critical | sysmon (11) | High |
+
+### T1003.003 — OS Credential Dumping: NTDS
+
+3 unified Sigma rules detecting NTDS.dit credential dumping via ntdsutil, file access tools, and dump file creation.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [ntdsutil Credential Dump](rules/t1003_003_ntds/tier1_ntdsutil_credential_dump.yml) | 1 | Critical | process_creation | High |
+| [NTDS.dit File Access](rules/t1003_003_ntds/tier1_ntds_file_access_suspicious.yml) | 1 | Critical | process_creation | Medium |
+| [NTDS Dump File Creation](rules/t1003_003_ntds/tier2_ntds_dump_file_creation.yml) | 2 | Critical | sysmon (11) | High |
+
+### T1557.001 — LLMNR/NBT-NS Poisoning and SMB Relay
+
+3 unified Sigma rules detecting name resolution poisoning via Responder/Inveigh tools, protocol config changes, and NTLM relay attacks.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Responder/Inveigh Tool Execution](rules/t1557_001_llmnr_nbtns_poisoning/tier1_responder_tool_execution.yml) | 1 | Critical | process_creation | Medium |
+| [LLMNR/NBT-NS Config Change](rules/t1557_001_llmnr_nbtns_poisoning/tier1_llmnr_nbtns_config_change.yml) | 1 | High | sysmon (13) | High |
+| [SMB/NTLM Relay Indicators](rules/t1557_001_llmnr_nbtns_poisoning/tier2_smb_ntlm_relay_indicators.yml) | 2 | Critical | process_creation | Medium |
+
+### T1552.006 — Unsecured Credentials: Group Policy Preferences
+
+3 unified Sigma rules detecting GPP credential extraction via password discovery tools, SYSVOL file access, and cpassword decryption.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [GPP Password Discovery](rules/t1552_006_gpp_credentials/tier1_gpp_password_discovery.yml) | 1 | High | process_creation | Medium |
+| [SYSVOL GPP File Access](rules/t1552_006_gpp_credentials/tier1_sysvol_gpp_file_access.yml) | 1 | High | process_creation | High |
+| [GPP cpassword Decryption](rules/t1552_006_gpp_credentials/tier2_gpp_cpassword_decryption.yml) | 2 | Critical | ps_script (4104) | High |
+
 ### Tiering Strategy
 
 - **Tier 1**: High-confidence, broad-coverage rules. Deploy immediately with minimal tuning.
@@ -478,6 +568,8 @@ Rules use extended tags to encode detection quality dimensions:
 | Windows Defender Operational | 5001/5007 | Defender protection state changes |
 | Sysmon ProcessAccess | 10 | LSASS memory access monitoring |
 | Windows Security Kerberos | 4769 | Kerberos TGS request (Kerberoasting) |
+| Sysmon FileAccess | — | Browser credential / DPAPI / SSH key access |
+| Sysmon FileCreate | 11 | SAM/NTDS file copy detection |
 
 ## References
 
@@ -508,6 +600,12 @@ Rules use extended tags to encode detection quality dimensions:
 - [MITRE ATT&CK T1685](https://attack.mitre.org/techniques/T1685/)
 - [MITRE ATT&CK T1003.001](https://attack.mitre.org/techniques/T1003/001/)
 - [MITRE ATT&CK T1558.003](https://attack.mitre.org/techniques/T1558/003/)
+- [MITRE ATT&CK T1555](https://attack.mitre.org/techniques/T1555/)
+- [MITRE ATT&CK T1552.001](https://attack.mitre.org/techniques/T1552/001/)
+- [MITRE ATT&CK T1003.002](https://attack.mitre.org/techniques/T1003/002/)
+- [MITRE ATT&CK T1003.003](https://attack.mitre.org/techniques/T1003/003/)
+- [MITRE ATT&CK T1557.001](https://attack.mitre.org/techniques/T1557/001/)
+- [MITRE ATT&CK T1552.006](https://attack.mitre.org/techniques/T1552/006/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
@@ -539,6 +637,12 @@ Rules use extended tags to encode detection quality dimensions:
 - [T1685 Cross-source analysis](docs/t1685_cross_source_analysis.md)
 - [T1003.001 Cross-source analysis](docs/t1003_001_cross_source_analysis.md)
 - [T1558.003 Cross-source analysis](docs/t1558_003_cross_source_analysis.md)
+- [T1555 Cross-source analysis](docs/t1555_cross_source_analysis.md)
+- [T1552.001 Cross-source analysis](docs/t1552_001_cross_source_analysis.md)
+- [T1003.002 Cross-source analysis](docs/t1003_002_cross_source_analysis.md)
+- [T1003.003 Cross-source analysis](docs/t1003_003_cross_source_analysis.md)
+- [T1557.001 Cross-source analysis](docs/t1557_001_cross_source_analysis.md)
+- [T1552.006 Cross-source analysis](docs/t1552_006_cross_source_analysis.md)
 
 ## Author
 

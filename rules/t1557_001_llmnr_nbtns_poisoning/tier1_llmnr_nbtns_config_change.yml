@@ -1,0 +1,60 @@
+title: LLMNR or NetBIOS Name Service Configuration Change
+id: f7c3d9a1-3102-4de0-b8c7-unified-t1557001
+related:
+    - id: b2c3d4e5-6f7a-unified-t1557001cfg  # Elastic LLMNR config
+      type: derived
+status: test
+description: |
+    Detects registry modifications that enable or disable LLMNR and
+    NetBIOS Name Service (NBT-NS). Adversaries may enable these legacy
+    name resolution protocols to facilitate poisoning attacks, while
+    defenders disable them as a mitigation. Monitoring changes to these
+    settings provides visibility into both attack preparation and
+    defense weakening.
+    Unified from:
+    - Elastic defense_evasion_llmnr_nbtns_config.toml
+    - SigmaHQ sysmon_registry_llmnr_nbtns.yml
+    - Splunk ESCU (LLMNR Configuration Change)
+references:
+    - https://attack.mitre.org/techniques/T1557/001/
+    - https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/disable-netbios-tcp-ip-using-dhcp
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1557.001
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-registry-13
+logsource:
+    category: registry_set
+    product: windows
+detection:
+    # LLMNR enable/disable
+    selection_llmnr:
+        TargetObject|endswith: '\DNSClient\EnableMulticast'
+
+    # NBT-NS configuration
+    selection_nbtns:
+        TargetObject|contains: '\NetBT\Parameters\Interfaces\'
+        TargetObject|endswith: '\NetbiosOptions'
+
+    # mDNS configuration
+    selection_mdns:
+        TargetObject|endswith: '\DNSClient\EnableMDNS'
+
+    # WPAD configuration
+    selection_wpad:
+        TargetObject|contains: '\Internet Settings'
+        TargetObject|endswith:
+            - '\AutoDetect'
+            - '\AutoConfigURL'
+
+    condition: 1 of selection_*
+falsepositives:
+    - IT administrators hardening LLMNR/NBT-NS settings via Group Policy
+    - Network configuration changes during deployment
+level: medium

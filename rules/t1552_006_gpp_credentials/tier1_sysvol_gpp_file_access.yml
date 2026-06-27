@@ -1,0 +1,56 @@
+title: SYSVOL GPP XML File Access
+id: f7c3d9a1-3202-4de0-b8c7-unified-t1552006
+related:
+    - id: e5f6a7b8-9c0d-unified-t1552006sysvol  # Elastic SYSVOL access
+      type: derived
+status: test
+description: |
+    Detects access to Group Policy Preferences XML files within SYSVOL
+    that may contain encrypted (but easily decryptable) credentials.
+    These files include Groups.xml, Services.xml, and DataSources.xml
+    which store cpassword attributes. Sysmon file access events capture
+    reads from the SYSVOL share.
+    Unified from:
+    - Elastic credential_access_sysvol_gpp.toml
+    - SigmaHQ file_access_win_sysvol_gpp.yml
+    - Splunk ESCU (SYSVOL GPP Access)
+references:
+    - https://attack.mitre.org/techniques/T1552/006/
+    - https://learn.microsoft.com/en-us/security-updates/securitybulletins/2014/ms14-025
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1552.006
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    category: file_access
+    product: windows
+detection:
+    selection_sysvol_gpp:
+        TargetFilename|contains:
+            - '\SYSVOL\'
+            - '\Policies\{'
+        TargetFilename|endswith:
+            - '\Groups.xml'
+            - '\Services.xml'
+            - '\Scheduledtasks.xml'
+            - '\DataSources.xml'
+            - '\Printers.xml'
+            - '\Drives.xml'
+
+    filter_gpo_management:
+        Image|endswith:
+            - '\mmc.exe'
+            - '\svchost.exe'
+            - '\gpupdate.exe'
+
+    condition: selection_sysvol_gpp and not filter_gpo_management
+falsepositives:
+    - Group Policy management tools
+    - Group Policy processing during logon
+level: high

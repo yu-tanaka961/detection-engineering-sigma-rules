@@ -1,0 +1,82 @@
+title: SAM/SYSTEM/SECURITY Registry Hive Export
+id: f7c3d9a1-2901-4de0-b8c7-unified-t1003002
+related:
+    - id: a1b2c3d4-5e6f-7a8b-unified-t1003002reg  # SigmaHQ SAM export
+      type: derived
+status: test
+description: |
+    Detects export of SAM, SYSTEM, or SECURITY registry hives using
+    reg.exe save command. These hives contain local account password
+    hashes (SAM), the SYSKEY for decryption (SYSTEM), and cached
+    domain credentials (SECURITY). Exporting these hives allows
+    offline credential extraction.
+    Unified from:
+    - SigmaHQ proc_creation_win_reg_save_sam.yml
+    - Elastic credential_access_sam_registry_export.toml
+    - Splunk ESCU (SAM Registry Hive Export)
+    - Azure Sentinel (Registry Hive Credential Access)
+references:
+    - https://attack.mitre.org/techniques/T1003/002/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1003.002
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # reg.exe save SAM/SYSTEM/SECURITY
+    selection_reg_save:
+        Image|endswith: '\reg.exe'
+        CommandLine|contains:
+            - ' save '
+            - ' export '
+        CommandLine|contains:
+            - 'hklm\sam'
+            - 'hklm\system'
+            - 'hklm\security'
+            - 'HKLM\SAM'
+            - 'HKLM\SYSTEM'
+            - 'HKLM\SECURITY'
+
+    # PowerShell registry hive copy
+    selection_ps_reg:
+        CommandLine|contains:
+            - '[Microsoft.Win32.RegistryKey]'
+            - 'Copy-Item'
+            - 'Get-ItemProperty'
+        CommandLine|contains:
+            - 'HKLM:\SAM'
+            - 'HKLM:\SYSTEM'
+            - 'HKLM:\SECURITY'
+
+    # esentutl copy of SAM files
+    selection_esentutl:
+        Image|endswith: '\esentutl.exe'
+        CommandLine|contains:
+            - '\config\SAM'
+            - '\config\SYSTEM'
+            - '\config\SECURITY'
+
+    # Shadow copy access to SAM
+    selection_shadow_sam:
+        CommandLine|contains:
+            - 'HarddiskVolumeShadowCopy'
+            - 'VolumeShadowCopy'
+        CommandLine|contains:
+            - '\config\SAM'
+            - '\config\SYSTEM'
+            - '\config\SECURITY'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Legitimate backup operations of registry hives
+    - System recovery procedures
+level: critical
