@@ -1,0 +1,86 @@
+title: Windows Defender Configuration Tampered via Registry
+id: f7c3d9a1-2402-4de0-b8c7-unified-t1685
+related:
+    - id: b2c3d4e5-6f7a-8b9c-0d1e-unified-t1685reg  # Elastic Defender registry
+      type: derived
+status: test
+description: |
+    Detects registry modifications that disable or weaken Windows Defender
+    protection features. Adversaries modify Defender policies via registry
+    to disable real-time protection, behavior monitoring, IOAV protection,
+    script scanning, and tamper protection. These changes are logged by
+    Sysmon EventID 13 (RegistryEvent - Value Set).
+    Unified from:
+    - Elastic defense_evasion_defender_disabled_registry.toml
+    - SigmaHQ sysmon_registry_defender_disabled.yml
+    - Splunk ESCU (Windows Defender Registry Modification)
+    - Azure Sentinel (Defender Policy Modification)
+references:
+    - https://attack.mitre.org/techniques/T1685/
+    - https://attack.mitre.org/techniques/T1562/001/
+    - https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/configure-microsoft-defender-antivirus-features
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.t1685
+    - attack.t1562.001
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-registry-13
+logsource:
+    category: registry_set
+    product: windows
+detection:
+    # Disable real-time protection
+    selection_realtime:
+        TargetObject|endswith:
+            - '\Policies\Microsoft\Windows Defender\Real-Time Protection\DisableRealtimeMonitoring'
+            - '\Policies\Microsoft\Windows Defender\Real-Time Protection\DisableBehaviorMonitoring'
+            - '\Policies\Microsoft\Windows Defender\Real-Time Protection\DisableOnAccessProtection'
+            - '\Policies\Microsoft\Windows Defender\Real-Time Protection\DisableIOAVProtection'
+            - '\Policies\Microsoft\Windows Defender\Real-Time Protection\DisableScanOnRealtimeEnable'
+            - '\Policies\Microsoft\Windows Defender\Real-Time Protection\DisableIntrusionPreventionSystem'
+        Details: 'DWORD (0x00000001)'
+
+    # Disable Defender entirely
+    selection_disable_defender:
+        TargetObject|endswith:
+            - '\Policies\Microsoft\Windows Defender\DisableAntiSpyware'
+            - '\Policies\Microsoft\Windows Defender\DisableAntiVirus'
+        Details: 'DWORD (0x00000001)'
+
+    # Disable specific scanning features
+    selection_disable_scan:
+        TargetObject|endswith:
+            - '\Policies\Microsoft\Windows Defender\Spynet\SpynetReporting'
+            - '\Policies\Microsoft\Windows Defender\Spynet\SubmitSamplesConsent'
+            - '\Policies\Microsoft\Windows Defender\MpEngine\MpEnablePus'
+        Details: 'DWORD (0x00000000)'
+
+    # Tamper protection bypass
+    selection_tamper:
+        TargetObject|contains: '\Microsoft\Windows Defender\Features'
+        TargetObject|endswith: '\TamperProtection'
+        Details: 'DWORD (0x00000000)'
+
+    # Add exclusions
+    selection_exclusions:
+        TargetObject|contains:
+            - '\Policies\Microsoft\Windows Defender\Exclusions\Paths'
+            - '\Policies\Microsoft\Windows Defender\Exclusions\Extensions'
+            - '\Policies\Microsoft\Windows Defender\Exclusions\Processes'
+
+    # Filter: Group Policy legitimate changes
+    filter_gpo:
+        Image|endswith: '\svchost.exe'
+
+    condition: (selection_realtime or selection_disable_defender or selection_disable_scan or selection_tamper or selection_exclusions) and not filter_gpo
+falsepositives:
+    - Group Policy pushing Defender configuration changes
+    - Authorized IT admin configuring Defender exclusions for known software
+level: critical

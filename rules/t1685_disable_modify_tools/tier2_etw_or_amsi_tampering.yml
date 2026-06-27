@@ -1,0 +1,104 @@
+title: ETW Provider or AMSI Tampering Detected
+id: f7c3d9a1-2403-4de0-b8c7-unified-t1685
+related:
+    - id: c3d4e5f6-7a8b-9c0d-1e2f-unified-t1685etw  # Elastic ETW tamper
+      type: derived
+status: test
+description: |
+    Detects attempts to tamper with Event Tracing for Windows (ETW) providers
+    or the Antimalware Scan Interface (AMSI) to blind security monitoring.
+    ETW tampering disables telemetry collection at the OS level, while AMSI
+    patching prevents script content from being inspected by security tools.
+    Both techniques are used by advanced adversaries to evade detection
+    before executing malicious payloads.
+    Unified from:
+    - Elastic defense_evasion_etw_provider_disabled.toml
+    - SigmaHQ posh_ps_amsi_bypass.yml, proc_creation_win_etw_tamper.yml
+    - Splunk ESCU (ETW Tampering, AMSI Bypass)
+    - Azure Sentinel (ETW Provider Modification)
+references:
+    - https://attack.mitre.org/techniques/T1685/
+    - https://attack.mitre.org/techniques/T1562/001/
+    - https://blog.xpnsec.com/hiding-your-dotnet-complus-etwenabled/
+    - https://www.mdsec.co.uk/2018/06/exploring-powershell-amsi-and-logging-evasion/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.t1685
+    - attack.t1562.001
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # ETW provider disabling via logman/auditpol
+    selection_etw_logman:
+        Image|endswith: '\logman.exe'
+        CommandLine|contains:
+            - 'stop'
+            - 'delete'
+        CommandLine|contains:
+            - 'EventLog-'
+            - 'Microsoft-Windows-'
+            - 'Threat-Intelligence'
+            - 'Sysmon'
+
+    # ETW disabling via environment variable
+    selection_etw_env:
+        CommandLine|contains:
+            - 'COMPlus_ETWEnabled'
+            - 'DOTNET_ETWEnabled'
+        CommandLine|contains: '0'
+
+    # ETW provider registry tampering
+    selection_etw_registry:
+        CommandLine|contains:
+            - 'HKLM\SYSTEM\CurrentControlSet\Control\WMI\Autologger'
+            - 'EventLog-Application'
+            - 'EventLog-Security'
+            - 'EventLog-System'
+        CommandLine|contains:
+            - 'Enabled'
+            - 'REG_DWORD'
+            - '0x0'
+
+    # auditpol disabling audit policies
+    selection_auditpol:
+        Image|endswith: '\auditpol.exe'
+        CommandLine|contains:
+            - '/set'
+            - '/clear'
+            - '/remove'
+        CommandLine|contains:
+            - '/failure:disable'
+            - '/success:disable'
+            - 'No Auditing'
+
+    # AMSI bypass patterns in PowerShell
+    selection_amsi_bypass:
+        CommandLine|contains:
+            - 'amsiInitFailed'
+            - 'AmsiUtils'
+            - 'amsiContext'
+            - 'AmsiScanBuffer'
+            - 'SetField(''amsiInitFailed'',''True'')'
+            - '[Ref].Assembly.GetType'
+
+    # Defender AMSI provider removal
+    selection_amsi_registry:
+        CommandLine|contains:
+            - 'HKLM\SOFTWARE\Microsoft\AMSI\Providers'
+            - 'Remove-Item'
+            - 'reg delete'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Legitimate audit policy changes by IT administrators
+    - ETW session management during troubleshooting
+level: critical
