@@ -7,15 +7,22 @@ Cross-source unified Sigma rules for threat detection, built by aggregating and 
 ```
 detection-engineering-sigma-rules/
 ├── rules/
-│   └── t1059_001_powershell/       # MITRE ATT&CK T1059.001
-│       ├── tier1_base64_encoded_powershell.yml
-│       ├── tier1_susp_parameter_combination.yml
-│       ├── tier1_download_execute_pattern.yml
-│       ├── tier2_suspicious_parent_process.yml
-│       ├── tier2_amsi_bypass_attempt.yml
-│       └── tier2_scriptblock_malicious_cmdlets.yml
+│   ├── t1059_001_powershell/       # MITRE ATT&CK T1059.001
+│   │   ├── tier1_base64_encoded_powershell.yml
+│   │   ├── tier1_susp_parameter_combination.yml
+│   │   ├── tier1_download_execute_pattern.yml
+│   │   ├── tier2_suspicious_parent_process.yml
+│   │   ├── tier2_amsi_bypass_attempt.yml
+│   │   └── tier2_scriptblock_malicious_cmdlets.yml
+│   └── t1003_006_dcsync/           # MITRE ATT&CK T1003.006
+│       ├── tier1_dcsync_replication_rights.yml
+│       ├── tier1_dcsync_tool_execution.yml
+│       ├── tier2_dcsync_scriptblock.yml
+│       ├── tier2_dcsync_network_drsuapi.yml
+│       └── tier2_dcsync_permission_delegation.yml
 └── docs/
-    └── t1059_001_cross_source_analysis.md
+    ├── t1059_001_cross_source_analysis.md
+    └── t1003_006_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -32,6 +39,18 @@ detection-engineering-sigma-rules/
 | [Suspicious Parent Process](rules/t1059_001_powershell/tier2_suspicious_parent_process.yml) | 2 | Critical | process_creation | High |
 | [AMSI Bypass Attempt](rules/t1059_001_powershell/tier2_amsi_bypass_attempt.yml) | 2 | Critical | ps_script | High |
 | [Malicious Cmdlets via ScriptBlock](rules/t1059_001_powershell/tier2_scriptblock_malicious_cmdlets.yml) | 2 | Critical | ps_script | High |
+
+### T1003.006 — DCSync
+
+5 unified Sigma rules detecting DCSync attacks across the full kill chain: permission delegation, tool execution, protocol-level replication, and PowerShell-based attacks.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Replication Rights (4662)](rules/t1003_006_dcsync/tier1_dcsync_replication_rights.yml) | 1 | Critical | security (4662) | High |
+| [Tool Execution](rules/t1003_006_dcsync/tier1_dcsync_tool_execution.yml) | 1 | Critical | process_creation | Medium |
+| [ScriptBlock DCSync](rules/t1003_006_dcsync/tier2_dcsync_scriptblock.yml) | 2 | Critical | ps_script (4104) | High |
+| [Network DRSUAPI Anomaly](rules/t1003_006_dcsync/tier2_dcsync_network_drsuapi.yml) | 2 | High | network_connection | High |
+| [Permission Delegation (5136)](rules/t1003_006_dcsync/tier2_dcsync_permission_delegation.yml) | 2 | Critical | security (5136) | High |
 
 ### Tiering Strategy
 
@@ -59,17 +78,22 @@ Rules use extended tags to encode detection quality dimensions:
 
 | Log Source | EventID | Required For |
 |---|---|---|
-| Sysmon EventID 1 / Security 4688 | process_creation | Tier 1 rules |
+| Sysmon EventID 1 / Security 4688 | process_creation | Tier 1 process rules |
 | PowerShell ScriptBlock Logging | 4104 | Tier 2 ScriptBlock rules |
+| Windows Security DS Access | 4662 | DCSync replication detection |
+| Windows Security DS Changes | 5136 | DCSync permission delegation |
+| Sysmon NetworkConnect | 3 | DCSync network anomaly |
 
 ## References
 
 - [MITRE ATT&CK T1059.001](https://attack.mitre.org/techniques/T1059/001/)
+- [MITRE ATT&CK T1003.006](https://attack.mitre.org/techniques/T1003/006/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
 - [Azure Sentinel Detections](https://github.com/Azure/Azure-Sentinel)
-- [Cross-source analysis](docs/t1059_001_cross_source_analysis.md)
+- [T1059.001 Cross-source analysis](docs/t1059_001_cross_source_analysis.md)
+- [T1003.006 Cross-source analysis](docs/t1003_006_cross_source_analysis.md)
 
 ## Author
 

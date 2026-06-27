@@ -1,0 +1,81 @@
+title: DCSync Related Activity in PowerShell ScriptBlock
+id: f7c3d9a1-0103-4de0-b8c7-unified-t1003006
+related:
+    - id: 89819aa4-bbd6-46bc-88ec-c7f7fe30efa6  # SigmaHQ malicious PS cmdlets
+      type: derived
+status: test
+description: |
+    Detects DCSync-related PowerShell activity via ScriptBlock Logging (EventID 4104).
+    ScriptBlock Logging captures deobfuscated script content, making it evasion-resistant.
+    This rule detects PowerSploit Invoke-DCSync, DSInternals AD replication cmdlets,
+    and direct .NET usage of DRS replication APIs from PowerShell.
+    Unified from:
+    - SigmaHQ posh_ps_malicious_commandlets.yml (DCSync subset)
+    - Splunk ESCU (DCSync Attack via PowerShell)
+    - Azure Sentinel (Suspicious PowerShell - AD Replication)
+references:
+    - https://attack.mitre.org/techniques/T1003/006/
+    - https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_logging
+    - https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/Invoke-ReplicaSync.ps1
+    - https://github.com/MichaelGrafnetter/DSInternals
+author: Yuhei Tanaka (Unified from SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1003.006
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.powershell-scriptblock-4104
+logsource:
+    category: ps_script
+    product: windows
+detection:
+    # PowerSploit / Empire DCSync cmdlets
+    selection_dcsync_cmdlet:
+        ScriptBlockText|contains:
+            - 'Invoke-DCSync'
+            - 'Invoke-ReplicaSync'
+            - 'Get-ADReplAccount'
+
+    # DSInternals module usage
+    selection_dsinternals:
+        ScriptBlockText|contains:
+            - 'DSInternals'
+            - 'Get-ADReplBackupKey'
+            - 'Get-ADReplAccount'
+            - 'ConvertTo-NTHash'
+            - 'Get-ADDBAccount'
+            - 'Get-BootKey'
+            - 'Get-ADKeyCredential'
+
+    # Direct .NET / Win32 API calls for DRS replication
+    selection_drsr_api:
+        ScriptBlockText|contains:
+            - 'DrsGetNCChanges'
+            - 'DRSGetNCChanges'
+            - 'DRSUAPI'
+            - 'MS-DRSR'
+
+    # Replication GUID references in scripts
+    selection_repl_guids:
+        ScriptBlockText|contains:
+            - '1131f6aa-9c07-11d1-f79f-00c04fc2dcd2'
+            - '1131f6ad-9c07-11d1-f79f-00c04fc2dcd2'
+            - '89e95b76-444d-4c62-991a-0facbeda640c'
+            - 'Replicating Directory Changes'
+
+    # Mimikatz DCSync via PowerShell (Invoke-Mimikatz wrapper)
+    selection_mimikatz_ps:
+        ScriptBlockText|contains:
+            - 'Invoke-Mimikatz'
+            - 'lsadump::dcsync'
+
+    condition: 1 of selection_*
+falsepositives:
+    - DSInternals used for legitimate AD forensics or migration
+    - AD health monitoring scripts querying replication status
+    - Authorized security assessments
+level: critical

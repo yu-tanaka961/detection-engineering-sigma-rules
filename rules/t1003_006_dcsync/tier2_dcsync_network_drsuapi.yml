@@ -1,0 +1,73 @@
+title: DCSync Network Anomaly - DRSUAPI from Non-DC Source
+id: f7c3d9a1-0104-4de0-b8c7-unified-t1003006
+related:
+    - id: 7610a9b2-3022-4481-a298-3848e6ddd78e  # Elastic network DRS anomaly
+      type: derived
+status: test
+description: |
+    Detects network connections to the Directory Replication Service (DRSUAPI)
+    RPC endpoint from non-Domain Controller sources. Legitimate DRS traffic
+    only originates from Domain Controllers and Azure AD Connect servers.
+    Any other source initiating DRSUAPI calls is a strong DCSync indicator.
+    This is a high-evasion-resistance detection because the adversary must
+    use the DRSUAPI protocol — there is no alternative path for DCSync.
+    Unified from:
+    - Elastic credential_access_dcsync_replication_rights.toml (network variant)
+    - Splunk ESCU (DCSync Network Indicator)
+    - Azure Sentinel (Anomalous DRS Traffic)
+references:
+    - https://attack.mitre.org/techniques/T1003/006/
+    - https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-drsr/
+    - https://adsecurity.org/?p=1729
+author: Yuhei Tanaka (Unified from Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1003.006
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-tool-change-resistance
+    - x-log-requirement.sysmon-networkconnect-3
+logsource:
+    category: network_connection
+    product: windows
+detection:
+    # RPC connection to Domain Controller on DRSUAPI-related ports
+    selection_dest_port:
+        DestinationPort:
+            - 135   # RPC Endpoint Mapper
+            - 389   # LDAP
+            - 636   # LDAPS
+        Initiated: 'true'
+
+    # Process making the connection is NOT a legitimate DC service
+    selection_suspicious_process:
+        Image|endswith:
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\python.exe'
+            - '\python3.exe'
+            - '\ruby.exe'
+            - '\cmd.exe'
+            - '\rundll32.exe'
+            - '\regsvr32.exe'
+
+    # Filter: legitimate Domain Controller processes
+    filter_main_ntds:
+        Image|endswith:
+            - '\lsass.exe'
+            - '\ntdsa.dll'
+            - '\Microsoft.Identity.Health.Adfs.DiagnosticsModule.dll'
+
+    # Filter: Azure AD Connect
+    filter_main_aadconnect:
+        Image|contains: 'Azure AD Connect'
+
+    condition: selection_dest_port and selection_suspicious_process and not 1 of filter_*
+falsepositives:
+    - Legitimate LDAP queries from admin scripts (high volume - tune per environment)
+    - Azure AD Connect servers performing directory sync
+    - Third-party identity management solutions
+level: high

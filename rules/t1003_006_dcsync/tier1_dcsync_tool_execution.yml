@@ -1,0 +1,79 @@
+title: DCSync Tool Execution via Command Line
+id: f7c3d9a1-0102-4de0-b8c7-unified-t1003006
+related:
+    - id: a64f8daf-01e4-4cbe-97dc-5b5a9388b8fd  # SigmaHQ mimikatz keywords
+      type: derived
+status: test
+description: |
+    Detects execution of known DCSync tools via command-line arguments and
+    ScriptBlock Logging. Covers Mimikatz lsadump::dcsync, Invoke-DCSync
+    (PowerSploit), impacket secretsdump, and other DCSync implementations.
+    This is a Tier 1 rule because the tool-specific strings are well-known
+    indicators, though more advanced adversaries may use custom tooling.
+    Unified from:
+    - SigmaHQ proc_creation_win_hktl_mimikatz_command_line.yml
+    - Splunk ESCU (DCSync Attack, Credential Dumping via Mimikatz)
+    - Elastic credential_access_cmdline_dump_tool.toml
+    - Azure Sentinel (Known Credential Dumping Tool Execution)
+references:
+    - https://attack.mitre.org/techniques/T1003/006/
+    - https://github.com/gentilkiwi/mimikatz/wiki/module-~-lsadump
+    - https://github.com/fortra/impacket/blob/master/examples/secretsdump.py
+    - https://powersploit.readthedocs.io/en/latest/Recon/Invoke-DCSync/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1003.006
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # Mimikatz lsadump::dcsync command
+    selection_mimikatz_dcsync:
+        CommandLine|contains:
+            - 'lsadump::dcsync'
+            - 'lsadump::netsync'
+            - 'lsadump::backupkeys'
+
+    # Mimikatz generic indicators combined with credential keywords
+    selection_mimikatz_generic:
+        CommandLine|contains:
+            - 'mimikatz'
+            - 'gentilkiwi'
+            - 'sekurlsa'
+
+    # PowerSploit / PowerView DCSync cmdlets
+    selection_powershell_dcsync:
+        CommandLine|contains:
+            - 'Invoke-DCSync'
+            - 'Get-ADReplAccount'
+            - 'Get-ADDBAccount'
+
+    # Impacket secretsdump indicators
+    selection_impacket:
+        CommandLine|contains:
+            - 'secretsdump'
+            - '-just-dc-ntlm'
+            - '-just-dc-user'
+            - '-just-dc '
+
+    # DSInternals PowerShell module
+    selection_dsinternals:
+        CommandLine|contains:
+            - 'Get-ADReplAccount'
+            - 'DSInternals'
+            - 'Get-ADReplBackupKey'
+            - 'ConvertTo-NTHash'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Legitimate use of DSInternals for AD forensics by authorized personnel
+    - Security assessment tools during authorized penetration tests
+level: critical

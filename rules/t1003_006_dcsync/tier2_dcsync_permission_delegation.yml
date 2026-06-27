@@ -1,0 +1,62 @@
+title: DCSync Permission Delegation - Replication Rights Granted to User
+id: f7c3d9a1-0105-4de0-b8c7-unified-t1003006
+related:
+    - id: 311b6ce2-7890-4383-a908-b431e1df4610  # SigmaHQ replication right backdoor
+      type: derived
+status: test
+description: |
+    Detects the delegation of Directory Replication rights (DS-Replication-Get-Changes
+    and DS-Replication-Get-Changes-All) to user accounts. Adversaries may grant these
+    rights to a compromised account as a persistence mechanism, enabling DCSync
+    at any time without needing Domain Admin privileges.
+    This is a pre-attack detection that catches the setup phase before the
+    actual DCSync occurs.
+    Unified from:
+    - SigmaHQ win_security_replication_user_backdoor.yml
+    - Elastic persistence_dcsync_permissions_granted.toml
+    - Splunk ESCU (AD Replication Permission Granted)
+    - Azure Sentinel (Replication Rights Delegation)
+references:
+    - https://attack.mitre.org/techniques/T1003/006/
+    - https://attack.mitre.org/techniques/T1098/
+    - https://adsecurity.org/?p=1729
+    - https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse/dump-password-hashes-from-domain-controller-with-dcsync
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.persistence
+    - attack.t1003.006
+    - attack.t1098
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-security-5136
+logsource:
+    product: windows
+    service: security
+detection:
+    # Event 5136: A directory service object was modified
+    selection_event:
+        EventID: 5136
+
+    # Modification to nTSecurityDescriptor (ACL change)
+    selection_attribute:
+        AttributeLDAPDisplayName: 'nTSecurityDescriptor'
+
+    # DS-Replication-Get-Changes GUID in the new value
+    selection_repl_rights:
+        AttributeValue|contains:
+            - '1131f6aa-9c07-11d1-f79f-00c04fc2dcd2'
+            - '1131f6ad-9c07-11d1-f79f-00c04fc2dcd2'
+            - '89e95b76-444d-4c62-991a-0facbeda640c'
+
+    condition: selection_event and selection_attribute and selection_repl_rights
+falsepositives:
+    - Legitimate delegation of replication rights for Azure AD Connect setup
+    - AD migration tools that require temporary replication permissions
+    - Initial Domain Controller promotion (dcpromo)
+level: critical

@@ -1,0 +1,81 @@
+title: DCSync Attack - Directory Replication Service Access
+id: f7c3d9a1-0101-4de0-b8c7-unified-t1003006
+related:
+    - id: 1bcc7f67-4e7a-44a7-8a25-7a5a3a9c3d2d  # SigmaHQ win_security_dcsync
+      type: derived
+status: test
+description: |
+    Detects DCSync attacks by monitoring for Directory Service replication
+    requests (Event ID 4662) with replication-specific access rights GUIDs.
+    DCSync abuses the MS-DRSR protocol to request password data from a
+    Domain Controller, mimicking legitimate DC-to-DC replication.
+    This is the highest-fidelity DCSync detection because the replication
+    GUIDs are architecturally required and cannot be avoided (回避困難な痕跡).
+    Unified from:
+    - SigmaHQ win_security_dcsync.yml
+    - Elastic credential_access_dcsync_replication_rights.toml
+    - Splunk ESCU (DCSync Attack)
+    - Azure Sentinel (AD Replication Request from Non-DC Account)
+references:
+    - https://attack.mitre.org/techniques/T1003/006/
+    - https://adsecurity.org/?p=1729
+    - https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-drsr/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_dcsync.yml
+    - https://github.com/elastic/detection-rules/blob/main/rules/windows/credential_access_dcsync_replication_rights.toml
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1003.006
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-security-4662
+logsource:
+    product: windows
+    service: security
+detection:
+    selection_event:
+        EventID: 4662
+
+    # DS-Replication-Get-Changes (GUID required for DCSync)
+    selection_repl_get_changes:
+        Properties|contains: '1131f6aa-9c07-11d1-f79f-00c04fc2dcd2'
+
+    # DS-Replication-Get-Changes-All (GUID for full secret replication)
+    selection_repl_get_changes_all:
+        Properties|contains: '1131f6ad-9c07-11d1-f79f-00c04fc2dcd2'
+
+    # DS-Replication-Get-Changes-In-Filtered-Set
+    selection_repl_filtered:
+        Properties|contains: '89e95b76-444d-4c62-991a-0facbeda640c'
+
+    # Access mask: Control Access (0x100)
+    selection_access:
+        AccessMask: '0x100'
+
+    # Filter out legitimate Domain Controller machine accounts
+    filter_main_dc_accounts:
+        SubjectUserName|endswith: '$'
+        SubjectUserName|contains:
+            - 'DC'
+            - 'AZUREADSSOACC'
+
+    # Filter out well-known replication service accounts
+    filter_main_msol:
+        SubjectUserName|startswith: 'MSOL_'
+
+    # Filter out Azure AD Connect accounts
+    filter_main_aadconnect:
+        SubjectUserName|contains: 'AADConnect'
+
+    condition: selection_event and (selection_repl_get_changes or selection_repl_get_changes_all or selection_repl_filtered) and selection_access and not 1 of filter_*
+falsepositives:
+    - Legitimate Domain Controller replication (filtered by machine account $)
+    - Azure AD Connect synchronization (MSOL_ accounts)
+    - Third-party AD management tools with delegated replication rights
+    - Backup solutions that use Directory Replication Services
+level: critical
