@@ -1,0 +1,67 @@
+title: Remote Scheduled Task Creation for Lateral Movement
+id: f7c3d9a1-1003-4de0-b8c7-unified-t1053005
+related:
+    - id: 2e5b1a2c-4d6f-8e3a-b7c9-1d0f2e3a4b5c  # Elastic remote schtask
+      type: derived
+status: test
+description: |
+    Detects creation of scheduled tasks on remote systems using schtasks.exe
+    /S parameter. Remote task creation is a well-known lateral movement
+    technique used by tools like Impacket atexec.py, CrackMapExec, and
+    manual adversary operations.
+    Unified from:
+    - Elastic lateral_movement_remote_schtask.toml
+    - SigmaHQ proc_creation_win_schtasks_remote.yml
+    - Splunk ESCU (Remote Scheduled Task Creation)
+    - Azure Sentinel (Remote Task Scheduler Activity)
+references:
+    - https://attack.mitre.org/techniques/T1053/005/
+    - https://attack.mitre.org/techniques/T1021/
+    - https://github.com/fortra/impacket/blob/master/examples/atexec.py
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.lateral_movement
+    - attack.persistence
+    - attack.t1053.005
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith: '\schtasks.exe'
+        - OriginalFileName: 'schtasks.exe'
+
+    # Remote system specification
+    selection_remote:
+        CommandLine|contains:
+            - '/S '
+            - '/s '
+            - '-s '
+
+    selection_create:
+        CommandLine|contains:
+            - '/Create'
+            - '/create'
+
+    # Optional: credentials passed on command line
+    selection_creds:
+        CommandLine|contains:
+            - '/U '
+            - '/u '
+            - '/P '
+            - '/p '
+
+    condition: selection_img and selection_remote and selection_create
+falsepositives:
+    - Legitimate remote administration using schtasks
+    - SCCM/MECM remote task deployment
+    - Group Policy-based task distribution
+level: high

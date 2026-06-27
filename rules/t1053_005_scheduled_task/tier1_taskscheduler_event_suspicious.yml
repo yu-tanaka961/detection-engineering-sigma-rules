@@ -1,0 +1,85 @@
+title: Suspicious Scheduled Task Registered via Event Log
+id: f7c3d9a1-1002-4de0-b8c7-unified-t1053005
+related:
+    - id: b3d05f46-7b42-4953-b84a-7c1c4c58e4e0  # SigmaHQ task scheduler event
+      type: derived
+status: test
+description: |
+    Detects suspicious scheduled task registration events (EventID 4698)
+    from Windows Security logs. EventID 4698 is logged when a task is
+    created and contains the full task XML definition including the action
+    to be executed. This is more reliable than monitoring schtasks.exe
+    because tasks can also be created via COM objects, PowerShell, and
+    direct Task Scheduler API calls.
+    Unified from:
+    - SigmaHQ win_security_susp_schtask_creation.yml
+    - Elastic persistence_scheduled_task_event.toml
+    - Splunk ESCU (Windows Scheduled Task Created via XML)
+    - Azure Sentinel (Suspicious Task Scheduler Event)
+references:
+    - https://attack.mitre.org/techniques/T1053/005/
+    - https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4698
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.persistence
+    - attack.t1053.005
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-security-4698
+logsource:
+    product: windows
+    service: security
+detection:
+    selection_event:
+        EventID: 4698
+
+    # Suspicious commands in task action XML
+    selection_action_cmd:
+        TaskContent|contains:
+            - 'cmd.exe'
+            - 'powershell.exe'
+            - 'pwsh.exe'
+            - 'mshta.exe'
+            - 'wscript.exe'
+            - 'cscript.exe'
+            - 'rundll32.exe'
+            - 'regsvr32.exe'
+            - 'certutil.exe'
+
+    # Suspicious paths in task action
+    selection_action_path:
+        TaskContent|contains:
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\ProgramData\'
+            - '\Downloads\'
+
+    # Encoded / obfuscated content
+    selection_action_encoded:
+        TaskContent|contains:
+            - '-encodedcommand'
+            - '-enc '
+            - 'FromBase64String'
+            - 'IEX'
+            - 'Invoke-Expression'
+            - 'DownloadString'
+
+    # Filter: Microsoft scheduled tasks
+    filter_main_microsoft:
+        TaskContent|contains:
+            - '<Author>Microsoft'
+            - '\Microsoft\Windows\'
+
+    condition: selection_event and (selection_action_cmd or selection_action_path or selection_action_encoded) and not 1 of filter_*
+falsepositives:
+    - Legitimate administrative task creation via Task Scheduler GUI
+    - Deployment tools creating scheduled maintenance tasks
+    - Group Policy-pushed scheduled tasks
+level: high

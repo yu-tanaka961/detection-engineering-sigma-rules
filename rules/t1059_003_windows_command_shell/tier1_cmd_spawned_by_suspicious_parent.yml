@@ -1,0 +1,99 @@
+title: Command Shell Spawned by Suspicious Parent Process
+id: f7c3d9a1-0702-4de0-b8c7-unified-t1059003
+related:
+    - id: 4f4baa9f-5ad1-4c56-9a7d-3c6b8f83e82c  # Elastic suspicious parent
+      type: derived
+status: test
+description: |
+    Detects cmd.exe spawned by processes that rarely or never execute command
+    shells in normal operations. Parent-child process anomalies are a high
+    evasion-resistance indicator because the parent process relationship is
+    architecturally required and difficult to spoof (回避困難な痕跡).
+    Covers Office applications, web servers, scripting engines, and other
+    unexpected parents.
+    Unified from:
+    - Elastic initial_access_suspicious_parent_child.toml
+    - SigmaHQ proc_creation_win_shell_spawn_susp_program.yml
+    - Splunk ESCU (Suspicious Process Spawning cmd.exe)
+    - Azure Sentinel (Unusual Parent-Child Process)
+references:
+    - https://attack.mitre.org/techniques/T1059/003/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_shell_spawn_susp_program.yml
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.t1059.003
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-tool-change-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_child:
+        - Image|endswith: '\cmd.exe'
+        - OriginalFileName: 'Cmd.Exe'
+
+    # Office applications
+    selection_parent_office:
+        ParentImage|endswith:
+            - '\winword.exe'
+            - '\excel.exe'
+            - '\powerpnt.exe'
+            - '\outlook.exe'
+            - '\msaccess.exe'
+            - '\mspub.exe'
+            - '\visio.exe'
+
+    # Web servers
+    selection_parent_web:
+        ParentImage|endswith:
+            - '\w3wp.exe'
+            - '\httpd.exe'
+            - '\nginx.exe'
+            - '\tomcat.exe'
+            - '\php-cgi.exe'
+
+    # PDF readers
+    selection_parent_pdf:
+        ParentImage|endswith:
+            - '\AcroRd32.exe'
+            - '\Acrobat.exe'
+            - '\FoxitReader.exe'
+
+    # Java applications
+    selection_parent_java:
+        ParentImage|endswith:
+            - '\java.exe'
+            - '\javaw.exe'
+
+    # Scripting engines spawning cmd
+    selection_parent_script:
+        ParentImage|endswith:
+            - '\mshta.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\regsvr32.exe'
+            - '\rundll32.exe'
+
+    # SQL Server
+    selection_parent_sql:
+        ParentImage|endswith: '\sqlservr.exe'
+
+    # Windows management
+    selection_parent_mgmt:
+        ParentImage|endswith:
+            - '\mmc.exe'
+            - '\wmiprvse.exe'
+
+    condition: selection_child and (1 of selection_parent_*)
+falsepositives:
+    - Legitimate Office COM add-ins executing shell commands
+    - Web application CGI scripts
+    - SQL Server Agent jobs using xp_cmdshell
+    - WMI-based monitoring tools
+level: high

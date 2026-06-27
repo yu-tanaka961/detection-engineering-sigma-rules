@@ -1,0 +1,93 @@
+title: Suspicious Windows Service Installation
+id: f7c3d9a1-0901-4de0-b8c7-unified-t1569002
+related:
+    - id: 7036d93c-7cca-4b64-b832-d71b3b0e3c87  # SigmaHQ suspicious service install
+      type: derived
+status: test
+description: |
+    Detects installation of suspicious Windows services via sc.exe or
+    the Service Control Manager (EventID 7045). Adversaries frequently
+    install malicious services for execution, persistence, and privilege
+    escalation. The service installation event (7045) is a high-fidelity
+    indicator as it is logged by the kernel and cannot be suppressed without
+    disabling the event log entirely.
+    Unified from:
+    - SigmaHQ win_system_service_install_susp.yml
+    - Elastic persistence_suspicious_service_creation.toml
+    - Splunk ESCU (Suspicious Service Installation)
+    - Azure Sentinel (Suspicious Service Created)
+references:
+    - https://attack.mitre.org/techniques/T1569/002/
+    - https://attack.mitre.org/techniques/T1543/003/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/system/service_control_manager/win_system_service_install_susp.yml
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.persistence
+    - attack.privilege_escalation
+    - attack.t1569.002
+    - attack.t1543.003
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-system-7045
+logsource:
+    product: windows
+    service: system
+detection:
+    selection_event:
+        EventID: 7045
+
+    # Suspicious service binary paths
+    selection_path_temp:
+        ImagePath|contains:
+            - '\Temp\'
+            - '\tmp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\ProgramData\'
+            - '\Downloads\'
+            - '\Desktop\'
+
+    # Command execution in service path
+    selection_path_cmd:
+        ImagePath|contains:
+            - 'cmd.exe'
+            - 'cmd /c'
+            - 'powershell'
+            - 'pwsh'
+            - 'mshta'
+            - 'rundll32'
+            - 'regsvr32'
+            - 'cscript'
+            - 'wscript'
+            - 'certutil'
+            - 'bitsadmin'
+
+    # Known attack tool service names
+    selection_name_suspicious:
+        ServiceName|contains:
+            - 'PSEXESVC'
+            - 'meterpreter'
+            - 'beacon'
+            - 'cobalt'
+            - 'payload'
+
+    # Randomized service names (short random strings)
+    selection_name_random:
+        ServiceName|re: '^[a-zA-Z]{4,8}$'
+        ImagePath|contains:
+            - '.exe'
+            - 'cmd'
+            - 'powershell'
+
+    condition: selection_event and (selection_path_temp or selection_path_cmd or selection_name_suspicious)
+falsepositives:
+    - Legitimate software installations that use services from temp paths
+    - PsExec used by authorized administrators
+    - Security tools installing monitoring services
+level: high

@@ -1,0 +1,85 @@
+title: WMI Event Subscription Persistence
+id: f7c3d9a1-1103-4de0-b8c7-unified-t1047
+related:
+    - id: 5c1f4856-7d5a-4d53-bc50-8d22be076da7  # SigmaHQ WMI event subscription
+      type: derived
+status: test
+description: |
+    Detects creation of WMI event subscriptions (EventConsumer, EventFilter,
+    FilterToConsumerBinding) used for persistence. WMI event subscriptions
+    allow code execution in response to system events and survive reboots.
+    This technique is used by APT groups and tools like PowerSploit
+    (Invoke-WmiPersistence) for fileless persistence.
+    Unified from:
+    - SigmaHQ sysmon_wmi_event_subscription.yml
+    - Elastic persistence_wmi_event_subscription.toml
+    - Splunk ESCU (WMI Permanent Event Subscription)
+    - Azure Sentinel (WMI Event Subscription Persistence)
+references:
+    - https://attack.mitre.org/techniques/T1047/
+    - https://attack.mitre.org/techniques/T1546/003/
+    - https://www.fireeye.com/blog/threat-research/2016/08/wmi_vs_wmi_monitor.html
+    - https://learn.microsoft.com/en-us/windows/win32/wmisdk/monitoring-events
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.persistence
+    - attack.t1047
+    - attack.t1546.003
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-wmi-19-20-21
+logsource:
+    product: windows
+    service: sysmon
+detection:
+    # Sysmon EventID 19: WmiEventFilter activity detected
+    selection_filter:
+        EventID: 19
+
+    # Sysmon EventID 20: WmiEventConsumer activity detected
+    selection_consumer:
+        EventID: 20
+
+    # Sysmon EventID 21: WmiEventConsumerToFilter activity
+    selection_binding:
+        EventID: 21
+
+    # Suspicious consumer types and content
+    selection_suspicious_consumer:
+        Destination|contains:
+            - 'CommandLineEventConsumer'
+            - 'ActiveScriptEventConsumer'
+
+    selection_suspicious_content:
+        Destination|contains:
+            - 'cmd.exe'
+            - 'powershell'
+            - 'pwsh'
+            - 'mshta'
+            - 'wscript'
+            - 'cscript'
+            - 'rundll32'
+            - 'regsvr32'
+            - 'certutil'
+            - 'http://'
+            - 'https://'
+            - 'IEX'
+            - 'Invoke-'
+            - 'FromBase64String'
+
+    # Filter: SCM Event Log Filter (legitimate)
+    filter_main_scm:
+        Operation|contains: 'SCM Event Log'
+
+    condition: (selection_filter or selection_consumer or selection_binding) and (selection_suspicious_consumer or selection_suspicious_content) and not 1 of filter_*
+falsepositives:
+    - Legitimate WMI event subscriptions for monitoring
+    - Security tools using WMI for event detection
+    - System management tools with WMI-based triggers
+level: critical

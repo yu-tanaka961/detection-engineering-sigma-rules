@@ -1,0 +1,93 @@
+title: WMI Provider Host Spawning Suspicious Child Process
+id: f7c3d9a1-1102-4de0-b8c7-unified-t1047
+related:
+    - id: d21374ff-f574-44a7-9998-4a8c8bf33d7d  # Elastic WMI child process
+      type: derived
+status: test
+description: |
+    Detects WmiPrvSE.exe (WMI Provider Service Host) spawning suspicious
+    child processes. When WMI is used to execute commands (locally or remotely),
+    wmiprvse.exe is the parent process for the spawned command.
+    This parent-child relationship is kernel-enforced and provides a high
+    evasion-resistance detection for WMI-based execution (回避困難な痕跡).
+    Unified from:
+    - Elastic execution_wmiprvse_child_process.toml
+    - SigmaHQ proc_creation_win_wmiprvse_susp_child.yml
+    - Splunk ESCU (WMI Spawning Suspicious Process)
+    - Azure Sentinel (WMI Provider Host Child Process)
+references:
+    - https://attack.mitre.org/techniques/T1047/
+    - https://github.com/elastic/detection-rules/blob/main/rules/windows/execution_wmiprvse_child_process.toml
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.t1047
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-tool-change-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_parent:
+        ParentImage|endswith: '\WmiPrvSE.exe'
+
+    # Suspicious child processes
+    selection_child_shell:
+        Image|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\mshta.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\bash.exe'
+
+    selection_child_lolbin:
+        Image|endswith:
+            - '\rundll32.exe'
+            - '\regsvr32.exe'
+            - '\certutil.exe'
+            - '\bitsadmin.exe'
+            - '\msiexec.exe'
+            - '\schtasks.exe'
+            - '\sc.exe'
+            - '\net.exe'
+            - '\net1.exe'
+
+    selection_child_recon:
+        Image|endswith:
+            - '\whoami.exe'
+            - '\systeminfo.exe'
+            - '\ipconfig.exe'
+            - '\nltest.exe'
+            - '\tasklist.exe'
+            - '\hostname.exe'
+            - '\query.exe'
+            - '\qprocess.exe'
+
+    selection_child_temp:
+        Image|contains:
+            - '\Temp\'
+            - '\tmp\'
+            - '\AppData\'
+            - '\Users\Public\'
+
+    # Filter: legitimate WMI operations
+    filter_main_scrcons:
+        Image|endswith: '\scrcons.exe'
+    filter_main_mofcomp:
+        Image|endswith: '\mofcomp.exe'
+    filter_main_wmiadap:
+        Image|endswith: '\WmiApSrv.exe'
+
+    condition: selection_parent and (selection_child_shell or selection_child_lolbin or selection_child_recon or selection_child_temp) and not 1 of filter_*
+falsepositives:
+    - WMI-based monitoring tools (SCOM, Dell OpenManage)
+    - SCCM/MECM WMI inventory collection
+    - Group Policy WMI filter evaluation
+level: high

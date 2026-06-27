@@ -1,0 +1,81 @@
+title: Execution from Mounted ISO/IMG/VHD Container
+id: f7c3d9a1-0802-4de0-b8c7-unified-t1204002
+related:
+    - id: 4f1b7b5c-9e7d-4c3a-8b6f-d2e1c4a5f8b9  # Elastic container mount execution
+      type: derived
+status: test
+description: |
+    Detects process execution from a mounted disk image (ISO, IMG, VHD, VHDX).
+    Since Microsoft disabled Office macros by default for internet-downloaded
+    files (2022), threat actors have pivoted to container-based delivery
+    (ISO/IMG/VHD) as a Mark-of-the-Web bypass technique.
+    The container is mounted as a virtual drive, and the payload inside
+    executes without the MOTW flag.
+    Unified from:
+    - Elastic defense_evasion_iso_mount_execution.toml
+    - SigmaHQ proc_creation_win_susp_iso_mount.yml
+    - Splunk ESCU (ISO Image Mount, MOTW Bypass)
+    - Azure Sentinel (Execution from Virtual Disk Image)
+references:
+    - https://attack.mitre.org/techniques/T1204/002/
+    - https://attack.mitre.org/techniques/T1553/005/
+    - https://www.proofpoint.com/us/blog/threat-insight/how-threat-actors-are-adapting-post-macro-world
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.defense_evasion
+    - attack.t1204.002
+    - attack.t1553.005
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # Execution from a drive letter that is NOT typical system drives
+    # Mounted ISOs appear as new drive letters (D:, E:, F:, etc.)
+    selection_mounted_drive:
+        Image|re: '^[D-Z]:\\\\'
+        Image|endswith:
+            - '.exe'
+            - '.scr'
+            - '.com'
+            - '.pif'
+            - '.bat'
+            - '.cmd'
+            - '.lnk'
+
+    # Explorer spawning executables (user double-clicked)
+    selection_explorer_parent:
+        ParentImage|endswith: '\explorer.exe'
+
+    # Specific mount process indicators
+    selection_mount_indicator:
+        ParentCommandLine|contains:
+            - '.iso'
+            - '.img'
+            - '.vhd'
+            - '.vhdx'
+
+    # Filter: legitimate removable media and CD drives
+    filter_main_optical:
+        Image|startswith: 'D:\\'
+        ParentImage|endswith: '\setup.exe'
+
+    filter_main_installer:
+        Image|endswith:
+            - '\setup.exe'
+            - '\install.exe'
+            - '\msiexec.exe'
+
+    condition: (selection_mounted_drive and selection_explorer_parent) or selection_mount_indicator and not 1 of filter_*
+falsepositives:
+    - Legitimate software distributed via ISO/IMG files
+    - Virtual machine disk mounts for backup/recovery
+    - Optical disc media execution
+level: high

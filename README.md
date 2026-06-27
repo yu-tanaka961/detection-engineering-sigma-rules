@@ -36,10 +36,30 @@ detection-engineering-sigma-rules/
 │   │   ├── tier1_office_suspicious_child_process.yml
 │   │   ├── tier1_office_macro_execution_indicators.yml
 │   │   └── tier2_suspicious_attachment_file_write.yml
-│   └── t1078_004_cloud_accounts/     # MITRE ATT&CK T1078.004
-│       ├── tier1_cloud_impossible_travel.yml
-│       ├── tier1_cloud_mfa_fatigue_attack.yml
-│       └── tier2_cloud_suspicious_service_principal.yml
+│   ├── t1078_004_cloud_accounts/     # MITRE ATT&CK T1078.004
+│   │   ├── tier1_cloud_impossible_travel.yml
+│   │   ├── tier1_cloud_mfa_fatigue_attack.yml
+│   │   └── tier2_cloud_suspicious_service_principal.yml
+│   ├── t1059_003_windows_command_shell/ # MITRE ATT&CK T1059.003
+│   │   ├── tier1_cmd_suspicious_execution_pattern.yml
+│   │   ├── tier1_cmd_spawned_by_suspicious_parent.yml
+│   │   └── tier2_cmd_obfuscation_techniques.yml
+│   ├── t1204_002_malicious_file/     # MITRE ATT&CK T1204.002
+│   │   ├── tier1_suspicious_file_execution_from_user_dir.yml
+│   │   ├── tier1_iso_img_vhd_mount_execution.yml
+│   │   └── tier2_lnk_file_suspicious_target.yml
+│   ├── t1569_002_service_execution/  # MITRE ATT&CK T1569.002
+│   │   ├── tier1_suspicious_service_installation.yml
+│   │   ├── tier1_sc_exe_service_creation.yml
+│   │   └── tier2_service_execution_from_unusual_process.yml
+│   ├── t1053_005_scheduled_task/     # MITRE ATT&CK T1053.005
+│   │   ├── tier1_schtasks_suspicious_creation.yml
+│   │   ├── tier1_taskscheduler_event_suspicious.yml
+│   │   └── tier2_schtasks_remote_creation.yml
+│   └── t1047_wmi/                    # MITRE ATT&CK T1047
+│       ├── tier1_wmic_suspicious_execution.yml
+│       ├── tier1_wmiprvse_suspicious_child.yml
+│       └── tier2_wmi_event_subscription_persistence.yml
 └── docs/
     ├── t1059_001_cross_source_analysis.md
     ├── t1003_006_cross_source_analysis.md
@@ -47,7 +67,12 @@ detection-engineering-sigma-rules/
     ├── t1133_cross_source_analysis.md
     ├── t1078_cross_source_analysis.md
     ├── t1566_001_cross_source_analysis.md
-    └── t1078_004_cross_source_analysis.md
+    ├── t1078_004_cross_source_analysis.md
+    ├── t1059_003_cross_source_analysis.md
+    ├── t1204_002_cross_source_analysis.md
+    ├── t1569_002_cross_source_analysis.md
+    ├── t1053_005_cross_source_analysis.md
+    └── t1047_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -127,6 +152,56 @@ detection-engineering-sigma-rules/
 | [MFA Fatigue Attack](rules/t1078_004_cloud_accounts/tier1_cloud_mfa_fatigue_attack.yml) | 1 | High | azure/signinlogs | High |
 | [Suspicious Service Principal](rules/t1078_004_cloud_accounts/tier2_cloud_suspicious_service_principal.yml) | 2 | High | azure/auditlogs | High |
 
+### T1059.003 — Windows Command Shell
+
+3 unified Sigma rules detecting malicious cmd.exe usage including reconnaissance chains, suspicious parents, and obfuscation.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Suspicious Execution Pattern](rules/t1059_003_windows_command_shell/tier1_cmd_suspicious_execution_pattern.yml) | 1 | Medium | process_creation | Medium |
+| [Suspicious Parent Process](rules/t1059_003_windows_command_shell/tier1_cmd_spawned_by_suspicious_parent.yml) | 1 | High | process_creation | High |
+| [Obfuscation Techniques](rules/t1059_003_windows_command_shell/tier2_cmd_obfuscation_techniques.yml) | 2 | High | process_creation | Medium |
+
+### T1204.002 — User Execution: Malicious File
+
+3 unified Sigma rules detecting user execution of malicious files via suspicious directories, container mounts, and weaponized LNK files.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Execution from User Directory](rules/t1204_002_malicious_file/tier1_suspicious_file_execution_from_user_dir.yml) | 1 | Medium | process_creation | Medium |
+| [ISO/IMG/VHD Mount Execution](rules/t1204_002_malicious_file/tier1_iso_img_vhd_mount_execution.yml) | 1 | High | process_creation | High |
+| [LNK Suspicious Target](rules/t1204_002_malicious_file/tier2_lnk_file_suspicious_target.yml) | 2 | High | process_creation | Medium |
+
+### T1569.002 — System Services: Service Execution
+
+3 unified Sigma rules detecting malicious service installation and execution.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Suspicious Service Installation (7045)](rules/t1569_002_service_execution/tier1_suspicious_service_installation.yml) | 1 | High | system (7045) | High |
+| [SC.exe Service Creation](rules/t1569_002_service_execution/tier1_sc_exe_service_creation.yml) | 1 | High | process_creation | Medium |
+| [Service Unusual Child Process](rules/t1569_002_service_execution/tier2_service_execution_from_unusual_process.yml) | 2 | Critical | process_creation | High |
+
+### T1053.005 — Scheduled Task
+
+3 unified Sigma rules detecting malicious scheduled task creation for persistence and lateral movement.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [schtasks.exe Suspicious Creation](rules/t1053_005_scheduled_task/tier1_schtasks_suspicious_creation.yml) | 1 | High | process_creation | Medium |
+| [Task Scheduler Event (4698)](rules/t1053_005_scheduled_task/tier1_taskscheduler_event_suspicious.yml) | 1 | High | security (4698) | High |
+| [Remote Task Creation](rules/t1053_005_scheduled_task/tier2_schtasks_remote_creation.yml) | 2 | High | process_creation | High |
+
+### T1047 — Windows Management Instrumentation
+
+3 unified Sigma rules detecting WMI abuse for execution, lateral movement, and persistence.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [WMIC Suspicious Execution](rules/t1047_wmi/tier1_wmic_suspicious_execution.yml) | 1 | High | process_creation | Medium |
+| [WmiPrvSE Suspicious Child](rules/t1047_wmi/tier1_wmiprvse_suspicious_child.yml) | 1 | High | process_creation | High |
+| [WMI Event Subscription](rules/t1047_wmi/tier2_wmi_event_subscription_persistence.yml) | 2 | Critical | sysmon (19/20/21) | High |
+
 ### Tiering Strategy
 
 - **Tier 1**: High-confidence, broad-coverage rules. Deploy immediately with minimal tuning.
@@ -165,6 +240,9 @@ Rules use extended tags to encode detection quality dimensions:
 | Windows Security NPS | 6272/6273 | VPN authentication anomaly |
 | Azure AD SigninLogs | — | Cloud impossible travel, MFA fatigue |
 | Azure AD AuditLogs | — | Service principal abuse |
+| Windows System EventLog | 7045 | Service installation detection |
+| Windows Security Task Scheduler | 4698 | Scheduled task registration |
+| Sysmon WMI Events | 19/20/21 | WMI event subscription persistence |
 
 ## References
 
@@ -175,6 +253,11 @@ Rules use extended tags to encode detection quality dimensions:
 - [MITRE ATT&CK T1078](https://attack.mitre.org/techniques/T1078/)
 - [MITRE ATT&CK T1566.001](https://attack.mitre.org/techniques/T1566/001/)
 - [MITRE ATT&CK T1078.004](https://attack.mitre.org/techniques/T1078/004/)
+- [MITRE ATT&CK T1059.003](https://attack.mitre.org/techniques/T1059/003/)
+- [MITRE ATT&CK T1204.002](https://attack.mitre.org/techniques/T1204/002/)
+- [MITRE ATT&CK T1569.002](https://attack.mitre.org/techniques/T1569/002/)
+- [MITRE ATT&CK T1053.005](https://attack.mitre.org/techniques/T1053/005/)
+- [MITRE ATT&CK T1047](https://attack.mitre.org/techniques/T1047/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
@@ -186,6 +269,11 @@ Rules use extended tags to encode detection quality dimensions:
 - [T1078 Cross-source analysis](docs/t1078_cross_source_analysis.md)
 - [T1566.001 Cross-source analysis](docs/t1566_001_cross_source_analysis.md)
 - [T1078.004 Cross-source analysis](docs/t1078_004_cross_source_analysis.md)
+- [T1059.003 Cross-source analysis](docs/t1059_003_cross_source_analysis.md)
+- [T1204.002 Cross-source analysis](docs/t1204_002_cross_source_analysis.md)
+- [T1569.002 Cross-source analysis](docs/t1569_002_cross_source_analysis.md)
+- [T1053.005 Cross-source analysis](docs/t1053_005_cross_source_analysis.md)
+- [T1047 Cross-source analysis](docs/t1047_cross_source_analysis.md)
 
 ## Author
 

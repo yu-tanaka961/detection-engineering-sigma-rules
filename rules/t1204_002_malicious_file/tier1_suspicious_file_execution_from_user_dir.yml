@@ -1,0 +1,90 @@
+title: Suspicious Executable Launched from User-Writable Directory
+id: f7c3d9a1-0801-4de0-b8c7-unified-t1204002
+related:
+    - id: b4f6a8c2-e013-4d67-a9a6-5ef3e8d94e5f  # SigmaHQ suspicious execution location
+      type: derived
+status: test
+description: |
+    Detects execution of files from user-writable directories (Downloads,
+    Desktop, Temp, AppData) that are common staging locations for malicious
+    files delivered via phishing or drive-by download.
+    Users rarely execute legitimate software from these locations, making
+    this a reliable indicator of user execution of malicious files.
+    Unified from:
+    - SigmaHQ proc_creation_win_susp_execution_path.yml
+    - Elastic execution_from_unusual_directory.toml
+    - Splunk ESCU (Suspicious Process From User-Writable Dir)
+    - Azure Sentinel (Executable from Suspicious Directory)
+references:
+    - https://attack.mitre.org/techniques/T1204/002/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_susp_execution_path.yml
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.t1204.002
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # Execution from Downloads
+    selection_downloads:
+        Image|contains: '\Downloads\'
+
+    # Execution from Desktop
+    selection_desktop:
+        Image|contains: '\Desktop\'
+
+    # Execution from Temp directories
+    selection_temp:
+        Image|contains:
+            - '\AppData\Local\Temp\'
+            - '\Windows\Temp\'
+
+    # Execution from AppData (non-standard install location)
+    selection_appdata:
+        Image|contains:
+            - '\AppData\Roaming\'
+            - '\AppData\Local\'
+        Image|endswith:
+            - '.exe'
+            - '.scr'
+            - '.com'
+            - '.pif'
+
+    # Execution from Public directories
+    selection_public:
+        Image|contains:
+            - '\Users\Public\'
+            - '\ProgramData\'
+
+    # Filter: known legitimate software in AppData
+    filter_main_chrome:
+        Image|contains: '\Google\Chrome\'
+    filter_main_teams:
+        Image|contains: '\Microsoft\Teams\'
+    filter_main_vscode:
+        Image|contains: '\Microsoft VS Code\'
+    filter_main_discord:
+        Image|contains: '\Discord\'
+    filter_main_spotify:
+        Image|contains: '\Spotify\'
+    filter_main_onedrive:
+        Image|contains: '\OneDrive\'
+    filter_main_update:
+        Image|contains:
+            - '\Update.exe'
+            - '\squirrel.exe'
+
+    condition: (selection_downloads or selection_desktop or selection_temp or selection_public) and not 1 of filter_*
+falsepositives:
+    - Legitimate portable applications run from Downloads
+    - Self-extracting installers in Temp directories
+    - Electron-based applications installed per-user in AppData
+level: medium

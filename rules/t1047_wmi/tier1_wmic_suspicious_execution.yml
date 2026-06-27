@@ -1,0 +1,88 @@
+title: Suspicious WMIC Command Execution
+id: f7c3d9a1-1101-4de0-b8c7-unified-t1047
+related:
+    - id: 526be59f-a573-4eea-b5f7-f0b80f93c60a  # SigmaHQ WMIC suspicious
+      type: derived
+status: test
+description: |
+    Detects suspicious use of WMIC (Windows Management Instrumentation
+    Command-line) for process creation, reconnaissance, lateral movement,
+    and defense evasion. WMIC is being deprecated by Microsoft but remains
+    widely abused by adversaries.
+    Unified from:
+    - SigmaHQ proc_creation_win_wmic_susp_execution.yml
+    - Elastic execution_wmic_suspicious.toml
+    - Splunk ESCU (Suspicious WMIC Usage)
+    - Azure Sentinel (WMIC Suspicious Activity)
+references:
+    - https://attack.mitre.org/techniques/T1047/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_wmic_susp_execution.yml
+    - https://learn.microsoft.com/en-us/windows/win32/wmisdk/wmic
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.t1047
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith: '\wmic.exe'
+        - OriginalFileName: 'wmic.exe'
+
+    # Process creation via WMI
+    selection_process_create:
+        CommandLine|contains|all:
+            - 'process'
+            - 'call'
+            - 'create'
+
+    # Remote WMI execution
+    selection_remote:
+        CommandLine|contains:
+            - '/node:'
+            - '/NODE:'
+
+    # WMI-based reconnaissance
+    selection_recon:
+        CommandLine|contains:
+            - 'os get'
+            - 'computersystem get'
+            - 'useraccount get'
+            - 'group get'
+            - 'service get'
+            - 'product get'
+            - 'qfe get'
+            - 'startup get'
+            - 'logicaldisk get'
+            - 'nicconfig get'
+            - 'shadowcopy get'
+
+    # Uninstall / tamper via WMI
+    selection_tamper:
+        CommandLine|contains:
+            - 'product where'
+            - 'call uninstall'
+            - 'shadowcopy delete'
+            - 'call terminate'
+
+    # XSL script processing (defense evasion T1220)
+    selection_xsl:
+        CommandLine|contains:
+            - '/FORMAT:'
+            - '/format:'
+            - '.xsl'
+
+    condition: selection_img and (selection_process_create or selection_remote or selection_tamper or selection_xsl)
+falsepositives:
+    - System administrators using WMIC for inventory
+    - SCCM/MECM hardware inventory collection
+    - Monitoring tools querying WMI for system state
+level: high

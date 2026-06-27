@@ -1,0 +1,81 @@
+title: Command Shell Obfuscation Techniques
+id: f7c3d9a1-0703-4de0-b8c7-unified-t1059003
+related:
+    - id: daf7f18b-4b74-4e72-beb8-6eed8e45e46c  # SigmaHQ cmd obfuscation
+      type: derived
+status: test
+description: |
+    Detects command-line obfuscation techniques used to evade static detection.
+    Common techniques include environment variable substring abuse (%COMSPEC%),
+    caret (^) insertion, variable expansion, and set/call tricks.
+    These techniques indicate deliberate evasion attempts and are rarely
+    used by legitimate software.
+    Unified from:
+    - SigmaHQ proc_creation_win_cmd_obfuscation.yml
+    - Elastic defense_evasion_cmd_obfuscation.toml
+    - Splunk ESCU (CMD Obfuscation Techniques)
+references:
+    - https://attack.mitre.org/techniques/T1059/003/
+    - https://attack.mitre.org/techniques/T1027/
+    - https://www.fireeye.com/blog/threat-research/2018/03/dosfuscation-exploring-obfuscation-and-detection-techniques.html
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.defense_evasion
+    - attack.t1059.003
+    - attack.t1027
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-evasion-resistance.medium
+    - x-drs.dq-precision
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith: '\cmd.exe'
+        - OriginalFileName: 'Cmd.Exe'
+
+    # Caret insertion obfuscation (e.g., p^o^w^e^r^s^h^e^l^l)
+    selection_caret:
+        CommandLine|re: '(\w\^){3,}'
+
+    # Environment variable substring abuse
+    selection_env_substr:
+        CommandLine|contains:
+            - '%COMSPEC%'
+            - '%comspec:~'
+            - '%PROCESSOR_ARCHITECTURE:~'
+            - '%PSModulePath:~'
+            - '%APPDATA:~'
+
+    # Set variable + call obfuscation
+    selection_set_call:
+        CommandLine|contains|all:
+            - 'set '
+            - '&&'
+            - 'call'
+            - '%'
+
+    # Cmd /V:ON for delayed variable expansion abuse
+    selection_delayed_expansion:
+        CommandLine|contains:
+            - '/V:ON'
+            - '/v:on'
+            - 'enabledelayedexpansion'
+
+    # String reversal / character code obfuscation
+    selection_char_obfuscation:
+        CommandLine|contains:
+            - 'cmd /c set'
+            - 'cmd /c "set'
+            - '-join[char[]'
+            - 'cmd.exe /V /C'
+
+    condition: selection_img and (selection_caret or selection_env_substr or selection_set_call or selection_delayed_expansion or selection_char_obfuscation)
+falsepositives:
+    - Poorly written batch scripts with unnecessary quoting
+    - Software installers with complex command-line construction
+level: high

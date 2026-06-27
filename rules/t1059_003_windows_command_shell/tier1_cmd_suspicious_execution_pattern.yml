@@ -1,0 +1,90 @@
+title: Suspicious Command Shell Execution Pattern
+id: f7c3d9a1-0701-4de0-b8c7-unified-t1059003
+related:
+    - id: 3b115f23-43cf-4287-b3ec-e51f3c78bc8e  # SigmaHQ suspicious cmd execution
+      type: derived
+status: test
+description: |
+    Detects cmd.exe execution with suspicious command-line patterns commonly
+    used by threat actors for reconnaissance, file manipulation, and defense
+    evasion. Covers chained commands, redirected output, and encoded payloads
+    passed to cmd.exe via /c or /k switches.
+    Unified from:
+    - SigmaHQ proc_creation_win_cmd_suspicious_execution.yml
+    - Elastic execution_suspicious_cmd_line.toml
+    - Splunk ESCU (Suspicious Cmd.exe Execution)
+    - Azure Sentinel (Suspicious Command Shell Activity)
+references:
+    - https://attack.mitre.org/techniques/T1059/003/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_cmd_suspicious_execution.yml
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.t1059.003
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith: '\cmd.exe'
+        - OriginalFileName: 'Cmd.Exe'
+
+    # Chained reconnaissance commands
+    selection_recon_chain:
+        CommandLine|contains|all:
+            - '/c'
+            - '&'
+        CommandLine|contains:
+            - 'whoami'
+            - 'ipconfig'
+            - 'systeminfo'
+            - 'net user'
+            - 'net group'
+            - 'net localgroup'
+            - 'tasklist'
+            - 'nltest'
+            - 'dsquery'
+            - 'qprocess'
+            - 'query user'
+
+    # Output redirection to file (data staging)
+    selection_redirect:
+        CommandLine|contains|all:
+            - '/c'
+            - '>'
+        CommandLine|contains:
+            - 'whoami'
+            - 'ipconfig'
+            - 'systeminfo'
+            - 'net '
+            - 'tasklist'
+            - 'dir '
+            - 'type '
+
+    # Command execution via echo + pipe
+    selection_echo_pipe:
+        CommandLine|contains:
+            - 'echo '
+            - '| cmd'
+            - 'cmd /c echo'
+
+    # ForFiles abuse for command execution
+    selection_forfiles:
+        CommandLine|contains:
+            - 'forfiles'
+            - '/p'
+            - '/c "cmd'
+
+    condition: selection_img and (selection_recon_chain or selection_redirect or selection_forfiles)
+falsepositives:
+    - System administrator batch scripts for inventory
+    - Legitimate monitoring tools running system commands
+    - SCCM/MECM client executing inventory collection
+level: medium

@@ -1,0 +1,83 @@
+title: Service Started by Unusual Process
+id: f7c3d9a1-0903-4de0-b8c7-unified-t1569002
+related:
+    - id: 3a6c73f8-1b2d-4e5a-9c0f-8d7e6b5a4c3d  # Elastic unusual service start
+      type: derived
+status: test
+description: |
+    Detects services.exe spawning suspicious child processes, indicating
+    that a service was installed and executed with a malicious binary.
+    When a service starts, services.exe is always the parent process.
+    The child process identity reveals what the service actually executes.
+    This parent-child relationship is kernel-enforced and highly evasion-resistant.
+    Unified from:
+    - Elastic execution_services_child_process.toml
+    - SigmaHQ proc_creation_win_services_susp_child.yml
+    - Splunk ESCU (Unusual Service Child Process)
+references:
+    - https://attack.mitre.org/techniques/T1569/002/
+    - https://github.com/elastic/detection-rules/blob/main/rules/windows/execution_services_child_process.toml
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.t1569.002
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-tool-change-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # services.exe as parent (kernel-enforced for service execution)
+    selection_parent:
+        ParentImage|endswith: '\services.exe'
+
+    # Suspicious child processes from services.exe
+    selection_child_shell:
+        Image|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\mshta.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+
+    selection_child_lolbin:
+        Image|endswith:
+            - '\rundll32.exe'
+            - '\regsvr32.exe'
+            - '\certutil.exe'
+            - '\bitsadmin.exe'
+            - '\msiexec.exe'
+
+    selection_child_temp:
+        Image|contains:
+            - '\Temp\'
+            - '\tmp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\ProgramData\'
+
+    # Filter: legitimate services that use these processes
+    filter_main_svchost:
+        Image|endswith: '\svchost.exe'
+    filter_main_wininit:
+        Image|endswith: '\wininit.exe'
+    filter_main_lsass:
+        Image|endswith: '\lsass.exe'
+    filter_main_spoolsv:
+        Image|endswith: '\spoolsv.exe'
+    filter_main_searchindexer:
+        Image|endswith: '\SearchIndexer.exe'
+    filter_main_msdtc:
+        Image|endswith: '\msdtc.exe'
+
+    condition: selection_parent and (selection_child_shell or selection_child_lolbin or selection_child_temp) and not 1 of filter_*
+falsepositives:
+    - Legitimate services that use cmd.exe or PowerShell for initialization
+    - Third-party monitoring agents installed as services
+    - SCCM/MECM client service operations
+level: critical
