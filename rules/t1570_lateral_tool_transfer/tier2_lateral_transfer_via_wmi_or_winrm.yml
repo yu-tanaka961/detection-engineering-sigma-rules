@@ -1,0 +1,71 @@
+title: Lateral Tool Transfer via WMI or WinRM File Operations
+id: f7c3d9a1-1570-4de0-b8c7-unified-t1570003
+related:
+  - id: elastic-wmi-winrm-transfer
+    type: derived
+  - id: splunk-lateral-transfer-wmi
+    type: derived
+status: experimental
+description: |
+  Detects lateral tool transfer using WMI or WinRM to stage files on remote
+  systems. Includes WMI process creation copying files, WinRM file transfers,
+  and PowerShell remoting Copy-Item to sessions.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1570/
+  - https://attack.mitre.org/techniques/T1047/
+  - https://attack.mitre.org/techniques/T1021/006/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.lateral_movement
+  - attack.t1570
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_wmic_copy:
+    Image|endswith: '\wmic.exe'
+    CommandLine|contains:
+      - 'process call create'
+    CommandLine|contains:
+      - 'copy '
+      - 'xcopy '
+      - 'cmd /c'
+      - 'powershell'
+  selection_winrm_transfer:
+    CommandLine|contains:
+      - 'Copy-Item'
+      - 'Set-Content'
+      - 'Out-File'
+    CommandLine|contains:
+      - '-Session'
+      - '-ComputerName'
+      - 'Invoke-Command'
+  selection_winrs:
+    Image|endswith: '\winrs.exe'
+    CommandLine|contains:
+      - '-r:'
+      - '/r:'
+    CommandLine|contains:
+      - 'copy '
+      - 'cmd '
+      - 'powershell'
+  selection_invoke_wmimethod:
+    CommandLine|contains:
+      - 'Invoke-WmiMethod'
+      - 'Invoke-CimMethod'
+    CommandLine|contains:
+      - 'Create'
+      - 'copy'
+  condition: selection_wmic_copy or selection_winrm_transfer or selection_winrs or selection_invoke_wmimethod
+falsepositives:
+  - Legitimate remote administration via WinRM
+  - Configuration management tools (Ansible, DSC)
+level: high

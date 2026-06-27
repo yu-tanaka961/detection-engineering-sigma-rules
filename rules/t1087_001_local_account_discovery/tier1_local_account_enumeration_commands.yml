@@ -1,0 +1,67 @@
+title: Local Account Enumeration via Net/WMIC Commands
+id: f7c3d9a1-1087-4de0-b8c7-unified-t1087101
+related:
+  - id: sigmahq-net-user-local
+    type: derived
+  - id: elastic-local-account-enum
+    type: derived
+status: experimental
+description: |
+  Detects local account enumeration via net user, net localgroup, and wmic useraccount
+  commands. Attackers enumerate local accounts to identify targets for privilege
+  escalation or lateral movement using local credentials.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1087/001/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.discovery
+  - attack.t1087.001
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_net_user:
+    Image|endswith:
+      - '\net.exe'
+      - '\net1.exe'
+    CommandLine|contains:
+      - ' user'
+  filter_domain:
+    CommandLine|contains:
+      - '/domain'
+      - '/do'
+  selection_net_localgroup:
+    Image|endswith:
+      - '\net.exe'
+      - '\net1.exe'
+    CommandLine|contains:
+      - ' localgroup'
+  selection_localgroup_specific:
+    Image|endswith:
+      - '\net.exe'
+      - '\net1.exe'
+    CommandLine|contains:
+      - 'Administrators'
+      - 'Remote Desktop Users'
+      - 'Remote Management Users'
+      - 'Backup Operators'
+  selection_wmic:
+    Image|endswith: '\wmic.exe'
+    CommandLine|contains:
+      - 'useraccount'
+    CommandLine|contains:
+      - 'list'
+      - 'get'
+  condition: (selection_net_user and not filter_domain) or selection_net_localgroup or selection_localgroup_specific or selection_wmic
+falsepositives:
+  - Legitimate system administration
+  - IT helpdesk scripts
+level: medium

@@ -1,0 +1,66 @@
+title: Network Share and Drive Enumeration
+id: f7c3d9a1-1083-4de0-b8c7-unified-t1083002
+related:
+  - id: sigmahq-net-share-enum
+    type: derived
+  - id: elastic-share-discovery
+    type: derived
+status: experimental
+description: |
+  Detects enumeration of network shares and mapped drives via net share, net use,
+  wmic share, and PowerView share enumeration. Attackers enumerate accessible
+  shares to find data for exfiltration or lateral movement targets.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1083/
+  - https://attack.mitre.org/techniques/T1135/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.discovery
+  - attack.t1083
+  - attack.t1135
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_net_share:
+    Image|endswith:
+      - '\net.exe'
+      - '\net1.exe'
+    CommandLine|contains:
+      - ' share'
+      - ' use'
+  selection_wmic_share:
+    Image|endswith: '\wmic.exe'
+    CommandLine|contains:
+      - 'share'
+      - 'logicaldisk'
+    CommandLine|contains:
+      - 'list'
+      - 'get'
+  selection_powershell_share:
+    CommandLine|contains:
+      - 'Get-SmbShare'
+      - 'Get-FileShare'
+      - 'Get-NetShare'
+      - 'Get-DomainFileServer'
+      - 'Get-WmiObject Win32_Share'
+      - 'Invoke-ShareFinder'
+  selection_snaffler:
+    CommandLine|contains:
+      - 'Snaffler'
+      - 'snaffler'
+      - 'ShareEnum'
+      - 'shareenum'
+  condition: selection_net_share or selection_wmic_share or selection_powershell_share or selection_snaffler
+falsepositives:
+  - Legitimate network administration
+  - File server management scripts
+level: medium

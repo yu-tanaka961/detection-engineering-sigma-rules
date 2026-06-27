@@ -1,0 +1,60 @@
+title: Executable File Write to Remote SMB Share
+id: f7c3d9a1-1570-4de0-b8c7-unified-t1570002
+related:
+  - id: sigmahq-smb-exe-write
+    type: derived
+  - id: elastic-smb-file-write
+    type: derived
+status: experimental
+description: |
+  Detects creation of executable files (EXE, DLL, SCR, BAT, PS1) on remote
+  SMB shares via Sysmon FileCreate events. This indicates lateral tool transfer
+  where an attacker stages payloads on remote systems via network shares.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1570/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.lateral_movement
+  - attack.t1570
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: file_event
+  product: windows
+detection:
+  selection_remote_write:
+    TargetFilename|startswith:
+      - '\\\\'
+    TargetFilename|endswith:
+      - '.exe'
+      - '.dll'
+      - '.scr'
+      - '.bat'
+      - '.cmd'
+      - '.ps1'
+      - '.vbs'
+      - '.js'
+      - '.hta'
+  selection_admin_share:
+    TargetFilename|contains:
+      - 'ADMIN$'
+      - 'C$'
+  selection_suspicious_exe:
+    TargetFilename|endswith:
+      - '.exe'
+      - '.dll'
+    TargetFilename|contains:
+      - '\Windows\Temp'
+      - '\Temp\\'
+      - '\ProgramData'
+  condition: selection_remote_write or (selection_admin_share and selection_suspicious_exe)
+falsepositives:
+  - Legitimate software deployment via SCCM or similar tools
+  - Group Policy software installation
+level: high

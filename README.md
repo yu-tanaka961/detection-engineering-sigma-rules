@@ -168,10 +168,30 @@ detection-engineering-sigma-rules/
 │   │   ├── tier1_domain_trust_enumeration_commands.yml
 │   │   ├── tier1_domain_trust_powershell_enumeration.yml
 │   │   └── tier2_cross_domain_trust_abuse_indicators.yml
-│   └── t1033_system_owner_user_discovery/ # MITRE ATT&CK T1033
-│       ├── tier1_whoami_system_info_commands.yml
-│       ├── tier1_environment_variable_user_discovery.yml
-│       └── tier2_rapid_recon_command_sequence.yml
+│   ├── t1033_system_owner_user_discovery/ # MITRE ATT&CK T1033
+│   │   ├── tier1_whoami_system_info_commands.yml
+│   │   ├── tier1_environment_variable_user_discovery.yml
+│   │   └── tier2_rapid_recon_command_sequence.yml
+│   ├── t1087_001_local_account_discovery/ # MITRE ATT&CK T1087.001
+│   │   ├── tier1_local_account_enumeration_commands.yml
+│   │   ├── tier1_local_account_powershell_enumeration.yml
+│   │   └── tier2_local_admin_targeted_enumeration.yml
+│   ├── t1083_file_and_directory_discovery/ # MITRE ATT&CK T1083
+│   │   ├── tier1_suspicious_directory_listing_commands.yml
+│   │   ├── tier1_share_and_network_drive_enumeration.yml
+│   │   └── tier2_sensitive_file_discovery_scriptblock.yml
+│   ├── t1021_002_smb_windows_admin_shares/ # MITRE ATT&CK T1021.002
+│   │   ├── tier1_psexec_smb_lateral_movement.yml
+│   │   ├── tier1_admin_share_access_suspicious.yml
+│   │   └── tier2_smb_lateral_movement_service_install.yml
+│   ├── t1021_001_remote_desktop_protocol/ # MITRE ATT&CK T1021.001
+│   │   ├── tier1_rdp_suspicious_connection.yml
+│   │   ├── tier1_rdp_session_hijacking.yml
+│   │   └── tier2_rdp_registry_and_firewall_modification.yml
+│   └── t1570_lateral_tool_transfer/    # MITRE ATT&CK T1570
+│       ├── tier1_lateral_file_copy_commands.yml
+│       ├── tier1_smb_executable_file_write.yml
+│       └── tier2_lateral_transfer_via_wmi_or_winrm.yml
 └── docs/
     ├── t1059_001_cross_source_analysis.md
     ├── t1003_006_cross_source_analysis.md
@@ -212,7 +232,12 @@ detection-engineering-sigma-rules/
     ├── t1018_cross_source_analysis.md
     ├── t1087_002_cross_source_analysis.md
     ├── t1482_cross_source_analysis.md
-    └── t1033_cross_source_analysis.md
+    ├── t1033_cross_source_analysis.md
+    ├── t1087_001_cross_source_analysis.md
+    ├── t1083_cross_source_analysis.md
+    ├── t1021_002_cross_source_analysis.md
+    ├── t1021_001_cross_source_analysis.md
+    └── t1570_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -622,6 +647,56 @@ detection-engineering-sigma-rules/
 | [Environment Variable User Discovery](rules/t1033_system_owner_user_discovery/tier1_environment_variable_user_discovery.yml) | 1 | Low | process_creation | Medium |
 | [Rapid Recon Command Sequence](rules/t1033_system_owner_user_discovery/tier2_rapid_recon_command_sequence.yml) | 2 | High | process_creation | High |
 
+### T1087.001 — Account Discovery: Local Account
+
+3 unified Sigma rules detecting local account enumeration via net/WMIC commands, PowerShell/WMI, and targeted local administrator discovery.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Local Account Enumeration Commands](rules/t1087_001_local_account_discovery/tier1_local_account_enumeration_commands.yml) | 1 | Medium | process_creation | Medium |
+| [Local Account PowerShell Enumeration](rules/t1087_001_local_account_discovery/tier1_local_account_powershell_enumeration.yml) | 1 | Medium | process_creation | Medium |
+| [Local Admin Targeted Enumeration](rules/t1087_001_local_account_discovery/tier2_local_admin_targeted_enumeration.yml) | 2 | High | ps_script (4104) | High |
+
+### T1083 — File and Directory Discovery
+
+3 unified Sigma rules detecting file/directory discovery via directory listing, share enumeration, and sensitive file search patterns.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Suspicious Directory Listing](rules/t1083_file_and_directory_discovery/tier1_suspicious_directory_listing_commands.yml) | 1 | Medium | process_creation | Medium |
+| [Share/Network Drive Enumeration](rules/t1083_file_and_directory_discovery/tier1_share_and_network_drive_enumeration.yml) | 1 | Medium | process_creation | Medium |
+| [Sensitive File Discovery ScriptBlock](rules/t1083_file_and_directory_discovery/tier2_sensitive_file_discovery_scriptblock.yml) | 2 | High | ps_script (4104) | High |
+
+### T1021.002 — SMB/Windows Admin Shares
+
+3 unified Sigma rules detecting SMB lateral movement via PsExec, admin share access, and remote service installation.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [PsExec/SMB Lateral Movement](rules/t1021_002_smb_windows_admin_shares/tier1_psexec_smb_lateral_movement.yml) | 1 | High | process_creation | Medium |
+| [Admin Share Access](rules/t1021_002_smb_windows_admin_shares/tier1_admin_share_access_suspicious.yml) | 1 | High | process_creation | Medium |
+| [SMB Remote Service Install (7045)](rules/t1021_002_smb_windows_admin_shares/tier2_smb_lateral_movement_service_install.yml) | 2 | Critical | system (7045) | High |
+
+### T1021.001 — Remote Desktop Protocol
+
+3 unified Sigma rules detecting RDP lateral movement via suspicious connections, session hijacking, and RDP enable/configuration changes.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [RDP Suspicious Connection](rules/t1021_001_remote_desktop_protocol/tier1_rdp_suspicious_connection.yml) | 1 | Medium | process_creation | Medium |
+| [RDP Session Hijacking (tscon)](rules/t1021_001_remote_desktop_protocol/tier1_rdp_session_hijacking.yml) | 1 | Critical | process_creation | High |
+| [RDP Registry/Firewall Modification](rules/t1021_001_remote_desktop_protocol/tier2_rdp_registry_and_firewall_modification.yml) | 2 | High | process_creation | High |
+
+### T1570 — Lateral Tool Transfer
+
+3 unified Sigma rules detecting lateral tool transfer via file copy commands, SMB executable writes, and WMI/WinRM file operations.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Lateral File Copy Commands](rules/t1570_lateral_tool_transfer/tier1_lateral_file_copy_commands.yml) | 1 | Medium | process_creation | Medium |
+| [SMB Executable File Write](rules/t1570_lateral_tool_transfer/tier1_smb_executable_file_write.yml) | 1 | High | file_event | High |
+| [WMI/WinRM File Transfer](rules/t1570_lateral_tool_transfer/tier2_lateral_transfer_via_wmi_or_winrm.yml) | 2 | High | process_creation | High |
+
 ### Tiering Strategy
 
 - **Tier 1**: High-confidence, broad-coverage rules. Deploy immediately with minimal tuning.
@@ -721,6 +796,11 @@ Rules use extended tags to encode detection quality dimensions:
 - [MITRE ATT&CK T1087.002](https://attack.mitre.org/techniques/T1087/002/)
 - [MITRE ATT&CK T1482](https://attack.mitre.org/techniques/T1482/)
 - [MITRE ATT&CK T1033](https://attack.mitre.org/techniques/T1033/)
+- [MITRE ATT&CK T1087.001](https://attack.mitre.org/techniques/T1087/001/)
+- [MITRE ATT&CK T1083](https://attack.mitre.org/techniques/T1083/)
+- [MITRE ATT&CK T1021.002](https://attack.mitre.org/techniques/T1021/002/)
+- [MITRE ATT&CK T1021.001](https://attack.mitre.org/techniques/T1021/001/)
+- [MITRE ATT&CK T1570](https://attack.mitre.org/techniques/T1570/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
@@ -765,6 +845,11 @@ Rules use extended tags to encode detection quality dimensions:
 - [T1087.002 Cross-source analysis](docs/t1087_002_cross_source_analysis.md)
 - [T1482 Cross-source analysis](docs/t1482_cross_source_analysis.md)
 - [T1033 Cross-source analysis](docs/t1033_cross_source_analysis.md)
+- [T1087.001 Cross-source analysis](docs/t1087_001_cross_source_analysis.md)
+- [T1083 Cross-source analysis](docs/t1083_cross_source_analysis.md)
+- [T1021.002 Cross-source analysis](docs/t1021_002_cross_source_analysis.md)
+- [T1021.001 Cross-source analysis](docs/t1021_001_cross_source_analysis.md)
+- [T1570 Cross-source analysis](docs/t1570_cross_source_analysis.md)
 
 ## Author
 

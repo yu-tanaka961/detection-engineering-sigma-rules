@@ -1,0 +1,79 @@
+title: Suspicious File and Directory Listing Commands
+id: f7c3d9a1-1083-4de0-b8c7-unified-t1083001
+related:
+  - id: sigmahq-dir-listing
+    type: derived
+  - id: elastic-file-discovery
+    type: derived
+status: experimental
+description: |
+  Detects suspicious file and directory enumeration via dir, tree, Get-ChildItem,
+  and ls commands targeting sensitive directories. Attackers enumerate file systems
+  to locate configuration files, credentials, and valuable data.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1083/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.discovery
+  - attack.t1083
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_dir_sensitive:
+    Image|endswith: '\cmd.exe'
+    CommandLine|contains:
+      - 'dir '
+      - 'tree '
+    CommandLine|contains:
+      - 'C:\Users'
+      - 'C:\Windows\System32'
+      - 'C:\Program Files'
+      - '%APPDATA%'
+      - '%USERPROFILE%'
+      - '/s'
+      - '/b'
+  selection_dir_recursive:
+    Image|endswith: '\cmd.exe'
+    CommandLine|contains|all:
+      - 'dir '
+      - '/s'
+    CommandLine|contains:
+      - '*.txt'
+      - '*.doc*'
+      - '*.xls*'
+      - '*.pdf'
+      - '*.config'
+      - '*.xml'
+      - '*.ini'
+      - '*.kdbx'
+  selection_powershell_gci:
+    CommandLine|contains:
+      - 'Get-ChildItem'
+      - 'gci '
+      - 'ls '
+    CommandLine|contains:
+      - '-Recurse'
+      - '-r '
+      - '-Include'
+      - '-Filter'
+  selection_suspicious_parent:
+    ParentImage|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+  condition: (selection_dir_sensitive or selection_dir_recursive or selection_powershell_gci) and selection_suspicious_parent
+falsepositives:
+  - Legitimate file management scripts
+  - Backup and indexing tools
+level: medium

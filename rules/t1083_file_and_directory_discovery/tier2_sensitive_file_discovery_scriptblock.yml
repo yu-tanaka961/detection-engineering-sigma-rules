@@ -1,0 +1,63 @@
+title: Sensitive File Discovery via PowerShell ScriptBlock
+id: f7c3d9a1-1083-4de0-b8c7-unified-t1083003
+related:
+  - id: elastic-sensitive-file-discovery
+    type: derived
+  - id: splunk-file-discovery-scriptblock
+    type: derived
+status: experimental
+description: |
+  Detects PowerShell ScriptBlock activity searching for sensitive files including
+  credentials, configurations, database files, and source code. The use of
+  recursive search with specific file patterns indicates targeted data discovery.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1083/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.discovery
+  - attack.t1083
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  product: windows
+  category: ps_script
+  definition: 'Requires PowerShell ScriptBlock Logging (EventID 4104)'
+detection:
+  selection_file_search:
+    ScriptBlockText|contains:
+      - 'Get-ChildItem'
+      - 'gci '
+      - 'dir '
+      - 'ls '
+      - '[System.IO.Directory]::GetFiles'
+  selection_sensitive_patterns:
+    ScriptBlockText|contains:
+      - '*.kdbx'
+      - '*.pfx'
+      - '*.p12'
+      - '*.pem'
+      - '*.key'
+      - '*.rdg'
+      - '*.rdp'
+      - 'web.config'
+      - 'appsettings.json'
+      - '*.vmdk'
+      - '*.vhdx'
+      - 'password'
+      - 'credential'
+      - 'secret'
+  selection_recursive:
+    ScriptBlockText|contains:
+      - '-Recurse'
+      - '-r '
+      - 'AllDirectories'
+  condition: selection_file_search and selection_sensitive_patterns and selection_recursive
+falsepositives:
+  - Legitimate security audit scripts
+  - Backup validation tools
+level: high

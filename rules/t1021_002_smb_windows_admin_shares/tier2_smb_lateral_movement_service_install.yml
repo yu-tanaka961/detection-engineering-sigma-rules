@@ -1,0 +1,55 @@
+title: SMB Lateral Movement via Remote Service Installation
+id: f7c3d9a1-1021-4de0-b8c7-unified-t1021203
+related:
+  - id: elastic-smb-service-install
+    type: derived
+  - id: splunk-remote-service-lateral
+    type: derived
+status: experimental
+description: |
+  Detects remote service installation patterns characteristic of SMB-based lateral
+  movement. Monitors for service creation events (7045) where the service binary
+  is located in ADMIN$ or a temporary directory, combined with network logon (Type 3).
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1021/002/
+  - https://attack.mitre.org/techniques/T1569/002/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.lateral_movement
+  - attack.t1021.002
+  - attack.t1569.002
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  product: windows
+  service: system
+detection:
+  selection_service_install:
+    EventID: 7045
+  selection_suspicious_path:
+    ImagePath|contains:
+      - 'ADMIN$'
+      - '\\\\127.0.0.1'
+      - '\Windows\Temp'
+      - '\Temp\\'
+      - 'cmd.exe /c'
+      - 'powershell'
+      - '%COMSPEC%'
+  selection_suspicious_name:
+    ServiceName|contains:
+      - 'PSEXESVC'
+      - 'PAEXEC'
+      - 'meterpreter'
+      - 'beacon'
+    ServiceName|re: '^[a-zA-Z]{8}$'
+  condition: selection_service_install and (selection_suspicious_path or selection_suspicious_name)
+falsepositives:
+  - PsExec used for legitimate remote administration
+  - Remote software deployment tools
+level: critical

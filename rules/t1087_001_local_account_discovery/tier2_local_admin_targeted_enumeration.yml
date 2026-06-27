@@ -1,0 +1,58 @@
+title: Local Administrator Account Targeted Enumeration
+id: f7c3d9a1-1087-4de0-b8c7-unified-t1087103
+related:
+  - id: elastic-local-admin-enum
+    type: derived
+  - id: splunk-local-admin-discovery
+    type: derived
+status: experimental
+description: |
+  Detects targeted enumeration of local administrator accounts via ScriptBlock
+  including Find-LocalAdminAccess, Invoke-EnumerateLocalAdmin, and direct
+  SAM account enumeration. This focused activity suggests an attacker mapping
+  local admin access across multiple hosts.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1087/001/
+  - https://github.com/PowerShellMafia/PowerSploit
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.discovery
+  - attack.t1087.001
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  product: windows
+  category: ps_script
+  definition: 'Requires PowerShell ScriptBlock Logging (EventID 4104)'
+detection:
+  selection_powerview_admin:
+    ScriptBlockText|contains:
+      - 'Find-LocalAdminAccess'
+      - 'Invoke-EnumerateLocalAdmin'
+      - 'Get-NetLocalGroup'
+      - 'Get-NetLocalGroupMember'
+      - 'Invoke-CheckLocalAdminAccess'
+  selection_sam_enum:
+    ScriptBlockText|contains:
+      - 'SAMR'
+      - 'NetLocalGroupGetMembers'
+      - 'NetUserEnum'
+      - 'LookupAccountSid'
+  selection_admin_check:
+    ScriptBlockText|contains:
+      - 'Administrators'
+      - 'S-1-5-32-544'
+    ScriptBlockText|contains:
+      - 'Get-LocalGroupMember'
+      - 'Win32_GroupUser'
+      - 'net localgroup'
+  condition: selection_powerview_admin or selection_sam_enum or selection_admin_check
+falsepositives:
+  - Legitimate AD security auditing scripts
+  - IT compliance checks
+level: high

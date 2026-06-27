@@ -1,0 +1,57 @@
+title: RDP Session Hijacking via tscon
+id: f7c3d9a1-1021-4de0-b8c7-unified-t1021102
+related:
+  - id: sigmahq-tscon-hijack
+    type: derived
+  - id: elastic-rdp-session-hijack
+    type: derived
+status: experimental
+description: |
+  Detects RDP session hijacking via tscon.exe, which allows connecting to
+  another user's RDP session without credentials when running as SYSTEM.
+  Also detects query session and rdp session enumeration used in preparation.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1021/001/
+  - https://medium.com/@networksecurity/rdp-hijacking-how-to-hijack-rds-and-remoteapp-sessions-transparently-to-move-through-an-da2a1e73a5f6
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.lateral_movement
+  - attack.t1021.001
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_tscon:
+    Image|endswith: '\tscon.exe'
+    CommandLine|contains:
+      - '/dest:'
+  selection_tscon_service:
+    ParentImage|endswith:
+      - '\services.exe'
+      - '\svchost.exe'
+      - '\cmd.exe'
+    Image|endswith: '\tscon.exe'
+  selection_query_session:
+    Image|endswith:
+      - '\query.exe'
+      - '\qwinsta.exe'
+    CommandLine|contains:
+      - 'session'
+  selection_suspicious_parent:
+    ParentImage|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    Image|endswith: '\tscon.exe'
+  condition: selection_tscon or selection_tscon_service or (selection_query_session and selection_suspicious_parent)
+falsepositives:
+  - Legitimate RDP session management by administrators
+level: critical
