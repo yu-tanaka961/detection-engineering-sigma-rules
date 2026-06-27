@@ -1,0 +1,78 @@
+title: Kerberos Encryption Downgrade to RC4 (Potential Kerberoasting)
+id: f7c3d9a1-2603-4de0-b8c7-unified-t1558003
+related:
+    - id: f6a7b8c9-0d1e-2f3a-4b5c-unified-kerb-rc4  # Elastic RC4 downgrade
+      type: derived
+status: test
+description: |
+    Detects Kerberos encryption downgrade attacks where TGS tickets are
+    requested with RC4 (etype 23/0x17) when the service account supports
+    AES (etype 17/18). This is a behavioral indicator of Kerberoasting
+    since attackers prefer RC4-encrypted tickets because they are
+    significantly faster to crack offline. EventID 4769 with encryption
+    type 0x17 from a non-machine account is suspicious in AES-capable
+    environments.
+    Unified from:
+    - Elastic credential_access_kerberos_downgrade.toml
+    - SigmaHQ win_security_kerberos_rc4_downgrade.yml
+    - Splunk ESCU (Kerberos RC4 Downgrade)
+references:
+    - https://attack.mitre.org/techniques/T1558/003/
+    - https://blog.harmj0y.net/redteaming/kerberoasting-revisited/
+    - https://adsecurity.org/?p=3458
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1558.003
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-security-4769
+logsource:
+    product: windows
+    service: security
+detection:
+    selection_event:
+        EventID: 4769
+
+    # RC4 encryption requested
+    selection_rc4_encryption:
+        TicketEncryptionType: '0x17'
+
+    # Ticket status is successful
+    selection_success:
+        Status: '0x0'
+
+    # Service is not krbtgt
+    filter_krbtgt:
+        ServiceName: 'krbtgt'
+
+    # Exclude machine accounts
+    filter_machine:
+        TargetUserName|endswith: '$'
+
+    # Exclude computer SPN requests
+    filter_computer_spn:
+        ServiceName|contains: '$'
+
+    # Exclude localhost
+    filter_localhost:
+        IpAddress|startswith:
+            - '::1'
+            - '127.'
+
+    # Exclude well-known Exchange/SQL SPNs that may use RC4
+    filter_legacy_spn:
+        ServiceName|startswith:
+            - 'exchangeAB/'
+            - 'kadmin/'
+
+    condition: selection_event and selection_rc4_encryption and selection_success and not 1 of filter_*
+falsepositives:
+    - Legacy applications and services that only support RC4 encryption
+    - Environments that have not migrated to AES Kerberos encryption
+    - Cross-domain trust relationships using RC4
+level: medium

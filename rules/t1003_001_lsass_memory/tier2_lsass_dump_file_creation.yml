@@ -1,0 +1,86 @@
+title: LSASS Memory Dump File Creation
+id: f7c3d9a1-2503-4de0-b8c7-unified-t1003001
+related:
+    - id: c3d4e5f6-7a8b-9c0d-1e2f-unified-lsass-file  # Elastic LSASS dump file
+      type: derived
+status: test
+description: |
+    Detects creation of files that indicate LSASS memory dump activity.
+    When credential dumping tools extract LSASS memory, they typically
+    write dump files with characteristic names (lsass.dmp, lsass.zip) or
+    in specific locations. Sysmon EventID 11 (FileCreate) captures these
+    file creation events regardless of the tool used.
+    Unified from:
+    - Elastic credential_access_lsass_dump_file.toml
+    - SigmaHQ sysmon_lsass_dump_file_creation.yml
+    - Splunk ESCU (LSASS Dump File Detection)
+references:
+    - https://attack.mitre.org/techniques/T1003/001/
+    - https://www.deepinstinct.com/blog/lsass-memory-dumps-are-stealthier-than-ever-before
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1003.001
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-filecreate-11
+logsource:
+    category: file_event
+    product: windows
+detection:
+    # LSASS dump file by name
+    selection_lsass_filename:
+        TargetFilename|contains:
+            - '\lsass'
+            - '\lsass_'
+        TargetFilename|endswith:
+            - '.dmp'
+            - '.mdmp'
+            - '.dump'
+            - '.zip'
+            - '.rar'
+            - '.cab'
+
+    # Known dump file patterns from tools
+    selection_known_patterns:
+        TargetFilename|endswith:
+            - '\debug.bin'
+            - '\lsass.dmp'
+            - '\lsass_dump.dmp'
+            - '\procdump_lsass.dmp'
+            - '\comsvcs_minidump.dmp'
+
+    # Dump files in suspicious locations
+    selection_dump_in_temp:
+        TargetFilename|contains:
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\ProgramData\'
+            - '\Downloads\'
+            - '\Desktop\'
+        TargetFilename|endswith:
+            - '.dmp'
+            - '.mdmp'
+        Image|endswith:
+            - '\rundll32.exe'
+            - '\procdump.exe'
+            - '\procdump64.exe'
+            - '\taskmgr.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+
+    # Windows Error Reporting LSASS crash dump
+    selection_wer_lsass:
+        TargetFilename|contains: '\Windows\Temp\lsass'
+        TargetFilename|endswith: '.dmp'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Windows Error Reporting generating LSASS crash dumps
+    - Authorized incident response collecting memory dumps
+level: critical

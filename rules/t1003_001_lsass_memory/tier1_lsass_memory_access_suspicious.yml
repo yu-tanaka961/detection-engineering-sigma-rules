@@ -1,0 +1,85 @@
+title: Suspicious Process Accessing LSASS Memory
+id: f7c3d9a1-2501-4de0-b8c7-unified-t1003001
+related:
+    - id: a1b2c3d4-5e6f-7a8b-9c0d-unified-lsass-acc  # SigmaHQ LSASS access
+      type: derived
+status: test
+description: |
+    Detects suspicious processes accessing LSASS (Local Security Authority
+    Subsystem Service) memory, which is the primary target for credential
+    dumping. Sysmon EventID 10 (ProcessAccess) logs when a process opens
+    a handle to lsass.exe with specific access rights (0x1010, 0x1410,
+    0x1038, 0x1F1FFF etc.) used by credential dumping tools.
+    Unified from:
+    - SigmaHQ sysmon_cred_dump_lsass_access.yml
+    - Elastic credential_access_lsass_memory_access.toml
+    - Splunk ESCU (LSASS Memory Access)
+    - Azure Sentinel (Credential Access via LSASS)
+references:
+    - https://attack.mitre.org/techniques/T1003/001/
+    - https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1003.001
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-processaccess-10
+logsource:
+    category: process_access
+    product: windows
+detection:
+    selection_target:
+        TargetImage|endswith: '\lsass.exe'
+
+    # Access rights commonly used for credential dumping
+    selection_access_rights:
+        GrantedAccess|contains:
+            - '0x1010'
+            - '0x1410'
+            - '0x1038'
+            - '0x1F0FFF'
+            - '0x1F1FFF'
+            - '0x143A'
+            - '0x0810'
+
+    # Filter: known legitimate processes
+    filter_system:
+        SourceImage|endswith:
+            - '\svchost.exe'
+            - '\lsass.exe'
+            - '\csrss.exe'
+            - '\wininit.exe'
+            - '\wmiprvse.exe'
+            - '\msiexec.exe'
+
+    filter_security_tools:
+        SourceImage|startswith:
+            - 'C:\Program Files\Windows Defender\'
+            - 'C:\Program Files\Microsoft Security Client\'
+            - 'C:\ProgramData\Microsoft\Windows Defender\'
+            - 'C:\Program Files\CrowdStrike\'
+            - 'C:\Program Files\SentinelOne\'
+            - 'C:\Program Files (x86)\Trend Micro\'
+
+    filter_windows:
+        SourceImage|startswith:
+            - 'C:\Windows\System32\'
+            - 'C:\Windows\SysWOW64\'
+        SourceImage|endswith:
+            - '\taskmgr.exe'
+            - '\procexp.exe'
+            - '\procexp64.exe'
+            - '\vmtoolsd.exe'
+
+    condition: selection_target and selection_access_rights and not 1 of filter_*
+falsepositives:
+    - Legitimate security tools performing LSASS scanning
+    - Process Explorer or Task Manager inspecting LSASS
+    - EDR agents accessing LSASS for monitoring
+level: critical

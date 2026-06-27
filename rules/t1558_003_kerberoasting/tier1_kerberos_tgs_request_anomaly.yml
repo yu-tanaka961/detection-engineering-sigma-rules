@@ -1,0 +1,68 @@
+title: Anomalous Kerberos TGS Request Pattern (Kerberoasting)
+id: f7c3d9a1-2601-4de0-b8c7-unified-t1558003
+related:
+    - id: d4e5f6a7-8b9c-0d1e-2f3a-unified-kerb-tgs  # SigmaHQ Kerberoasting
+      type: derived
+status: test
+description: |
+    Detects potential Kerberoasting by monitoring for anomalous Kerberos
+    TGS (Ticket Granting Service) requests. EventID 4769 logs TGS requests
+    and captures the encryption type. Kerberoasting tools request RC4
+    (0x17) encrypted service tickets which are easier to crack offline.
+    Multiple TGS requests for different SPNs from a single user in a short
+    timeframe is a strong indicator of Kerberoasting.
+    Unified from:
+    - SigmaHQ win_security_kerberoasting.yml
+    - Elastic credential_access_kerberoasting.toml
+    - Splunk ESCU (Kerberoasting TGS Request)
+    - Azure Sentinel (Kerberoasting Detection)
+references:
+    - https://attack.mitre.org/techniques/T1558/003/
+    - https://adsecurity.org/?p=2293
+    - https://www.harmj0y.net/blog/powershell/kerberoasting-without-mimikatz/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.credential_access
+    - attack.t1558.003
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-security-4769
+logsource:
+    product: windows
+    service: security
+detection:
+    selection_event:
+        EventID: 4769
+
+    # RC4 encryption type (weak, targeted by Kerberoasting)
+    selection_rc4:
+        TicketEncryptionType: '0x17'
+
+    # Exclude machine accounts and known service accounts
+    filter_machine_accounts:
+        TargetUserName|endswith: '$'
+
+    # Exclude krbtgt (normal TGT renewal)
+    filter_krbtgt:
+        ServiceName: 'krbtgt'
+
+    # Exclude common service account patterns
+    filter_common_services:
+        ServiceName|startswith:
+            - 'krbtgt/'
+
+    # Exclude localhost requests
+    filter_localhost:
+        IpAddress: '::1'
+
+    condition: selection_event and selection_rc4 and not 1 of filter_*
+falsepositives:
+    - Legacy applications requiring RC4 Kerberos encryption
+    - Service accounts configured with RC4 only (should be remediated)
+    - Legitimate administrative tools querying SPNs
+level: high

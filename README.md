@@ -108,10 +108,18 @@ detection-engineering-sigma-rules/
 │   │   ├── tier1_certutil_decode_operations.yml
 │   │   ├── tier1_powershell_decode_and_execute.yml
 │   │   └── tier2_compiled_html_or_xsl_decode.yml
-│   └── t1685_disable_modify_tools/    # MITRE ATT&CK T1685 (旧T1562.001)
-│       ├── tier1_security_tool_service_disabled.yml
-│       ├── tier1_windows_defender_registry_tamper.yml
-│       └── tier2_etw_or_amsi_tampering.yml
+│   ├── t1685_disable_modify_tools/    # MITRE ATT&CK T1685 (旧T1562.001)
+│   │   ├── tier1_security_tool_service_disabled.yml
+│   │   ├── tier1_windows_defender_registry_tamper.yml
+│   │   └── tier2_etw_or_amsi_tampering.yml
+│   ├── t1003_001_lsass_memory/        # MITRE ATT&CK T1003.001
+│   │   ├── tier1_lsass_memory_access_suspicious.yml
+│   │   ├── tier1_credential_dumping_tool_execution.yml
+│   │   └── tier2_lsass_dump_file_creation.yml
+│   └── t1558_003_kerberoasting/       # MITRE ATT&CK T1558.003
+│       ├── tier1_kerberos_tgs_request_anomaly.yml
+│       ├── tier1_kerberoasting_tool_execution.yml
+│       └── tier2_kerberos_rc4_downgrade.yml
 └── docs/
     ├── t1059_001_cross_source_analysis.md
     ├── t1003_006_cross_source_analysis.md
@@ -137,7 +145,9 @@ detection-engineering-sigma-rules/
     ├── t1218_cross_source_analysis.md
     ├── t1218_011_cross_source_analysis.md
     ├── t1140_cross_source_analysis.md
-    └── t1685_cross_source_analysis.md
+    ├── t1685_cross_source_analysis.md
+    ├── t1003_001_cross_source_analysis.md
+    └── t1558_003_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -397,6 +407,26 @@ detection-engineering-sigma-rules/
 | [Defender Registry Tamper](rules/t1685_disable_modify_tools/tier1_windows_defender_registry_tamper.yml) | 1 | Critical | sysmon (13) | High |
 | [ETW/AMSI Tampering](rules/t1685_disable_modify_tools/tier2_etw_or_amsi_tampering.yml) | 2 | Critical | process_creation | High |
 
+### T1003.001 — OS Credential Dumping: LSASS Memory
+
+3 unified Sigma rules detecting LSASS credential dumping via process access monitoring, known tool execution, and dump file creation.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [LSASS Memory Access](rules/t1003_001_lsass_memory/tier1_lsass_memory_access_suspicious.yml) | 1 | Critical | sysmon (10) | High |
+| [Credential Dumping Tool](rules/t1003_001_lsass_memory/tier1_credential_dumping_tool_execution.yml) | 1 | Critical | process_creation | Medium |
+| [LSASS Dump File Creation](rules/t1003_001_lsass_memory/tier2_lsass_dump_file_creation.yml) | 2 | Critical | sysmon (11) | High |
+
+### T1558.003 — Kerberoasting
+
+3 unified Sigma rules detecting Kerberoasting via anomalous TGS requests, known tool execution, and RC4 encryption downgrade.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [TGS Request Anomaly (RC4)](rules/t1558_003_kerberoasting/tier1_kerberos_tgs_request_anomaly.yml) | 1 | High | security (4769) | High |
+| [Kerberoasting Tool Execution](rules/t1558_003_kerberoasting/tier1_kerberoasting_tool_execution.yml) | 1 | High | process_creation | Medium |
+| [RC4 Encryption Downgrade](rules/t1558_003_kerberoasting/tier2_kerberos_rc4_downgrade.yml) | 2 | Medium | security (4769) | High |
+
 ### Tiering Strategy
 
 - **Tier 1**: High-confidence, broad-coverage rules. Deploy immediately with minimal tuning.
@@ -446,6 +476,8 @@ Rules use extended tags to encode detection quality dimensions:
 | Security Event Log Cleared | 1102 | Event log clearing detection |
 | Sysmon FileCreateTimeChanged | 2 | Timestomping detection |
 | Windows Defender Operational | 5001/5007 | Defender protection state changes |
+| Sysmon ProcessAccess | 10 | LSASS memory access monitoring |
+| Windows Security Kerberos | 4769 | Kerberos TGS request (Kerberoasting) |
 
 ## References
 
@@ -474,6 +506,8 @@ Rules use extended tags to encode detection quality dimensions:
 - [MITRE ATT&CK T1218.011](https://attack.mitre.org/techniques/T1218/011/)
 - [MITRE ATT&CK T1140](https://attack.mitre.org/techniques/T1140/)
 - [MITRE ATT&CK T1685](https://attack.mitre.org/techniques/T1685/)
+- [MITRE ATT&CK T1003.001](https://attack.mitre.org/techniques/T1003/001/)
+- [MITRE ATT&CK T1558.003](https://attack.mitre.org/techniques/T1558/003/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
@@ -503,6 +537,8 @@ Rules use extended tags to encode detection quality dimensions:
 - [T1218.011 Cross-source analysis](docs/t1218_011_cross_source_analysis.md)
 - [T1140 Cross-source analysis](docs/t1140_cross_source_analysis.md)
 - [T1685 Cross-source analysis](docs/t1685_cross_source_analysis.md)
+- [T1003.001 Cross-source analysis](docs/t1003_001_cross_source_analysis.md)
+- [T1558.003 Cross-source analysis](docs/t1558_003_cross_source_analysis.md)
 
 ## Author
 
