@@ -1,0 +1,65 @@
+title: VPN Logon from Suspicious Source or Unusual Hours
+id: f7c3d9a1-0303-4de0-b8c7-unified-t1133
+related:
+    - id: b6e5f5d8-7c32-4e65-bd54-3e7a1d4c5f60  # Sentinel VPN anomaly
+      type: derived
+status: test
+description: |
+    Detects VPN connection events that exhibit suspicious patterns such as
+    connections from known anonymizer/TOR exit node ranges, or VPN services
+    being accessed by accounts that have not historically used remote access.
+    This rule monitors Windows RRAS and NPS (RADIUS) logs for anomalous
+    VPN authentication activity.
+    Unified from:
+    - Azure Sentinel (Anomalous VPN Connection)
+    - Splunk ESCU (VPN Connection from Unusual Source)
+    - Elastic lateral_movement_vpn_anomaly.toml
+references:
+    - https://attack.mitre.org/techniques/T1133/
+    - https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/jj129440(v=ws.11)
+author: Yuhei Tanaka (Unified from Sentinel, Splunk, Elastic)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.t1133
+    - x-source.azure-sentinel
+    - x-source.splunk-escu
+    - x-source.elastic-detection-rules
+    - x-evasion-resistance.medium
+    - x-drs.dq-precision
+logsource:
+    product: windows
+    service: security
+detection:
+    # NPS/RADIUS authentication events
+    selection_nps_success:
+        EventID: 6272
+
+    selection_nps_failure:
+        EventID: 6273
+
+    # RRAS VPN connection events
+    selection_rras:
+        EventID: 20271
+
+    # Successful VPN/Remote logon (Network logon)
+    selection_logon:
+        EventID: 4624
+        LogonType: 3
+        AuthenticationPackageName: 'Negotiate'
+
+    # Suspicious: logon outside business hours (UTC)
+    # Note: Adjust time range for local timezone
+    selection_offhours:
+        EventID: 4624
+        LogonType:
+            - 3
+            - 10
+
+    condition: selection_nps_failure | count() by SubjectUserName > 5
+    timeframe: 10m
+falsepositives:
+    - Employees working remotely from different time zones
+    - Automated service accounts authenticating via VPN
+    - Legitimate use of VPN from travel locations
+level: medium

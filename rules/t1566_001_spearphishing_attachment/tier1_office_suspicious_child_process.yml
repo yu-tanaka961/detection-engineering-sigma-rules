@@ -1,0 +1,102 @@
+title: Office Application Spawning Suspicious Child Process
+id: f7c3d9a1-0501-4de0-b8c7-unified-t1566001
+related:
+    - id: 438025f9-5856-4663-83f7-52f878a70a77  # Elastic Office child process
+      type: derived
+status: test
+description: |
+    Detects Microsoft Office applications spawning suspicious child processes
+    such as cmd.exe, PowerShell, scripting engines, or LOLBins.
+    This is the primary spearphishing attachment execution indicator —
+    a macro, DDE, or embedded object in a document triggers process execution.
+    Parent-child relationships are architecturally difficult to spoof (回避困難な痕跡).
+    Unified from:
+    - Elastic initial_access_suspicious_ms_office_child_process.toml
+    - SigmaHQ proc_creation_win_office_shell.yml
+    - Splunk ESCU (Office Application Spawn Suspicious Process)
+    - Azure Sentinel (Office Application Spawning Suspicious Process)
+references:
+    - https://attack.mitre.org/techniques/T1566/001/
+    - https://attack.mitre.org/techniques/T1204/002/
+    - https://github.com/elastic/detection-rules/blob/main/rules/windows/initial_access_suspicious_ms_office_child_process.toml
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.execution
+    - attack.t1566.001
+    - attack.t1204.002
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-tool-change-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # Office applications as parent
+    selection_parent:
+        ParentImage|endswith:
+            - '\winword.exe'
+            - '\excel.exe'
+            - '\powerpnt.exe'
+            - '\outlook.exe'
+            - '\msaccess.exe'
+            - '\mspub.exe'
+            - '\visio.exe'
+            - '\onenote.exe'
+            - '\onenoteim.exe'
+            - '\eqnedt32.exe'
+
+    # Direct suspicious child processes
+    selection_child_shell:
+        Image|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\mshta.exe'
+            - '\bash.exe'
+
+    # LOLBins commonly used for payload execution
+    selection_child_lolbin:
+        Image|endswith:
+            - '\certutil.exe'
+            - '\bitsadmin.exe'
+            - '\rundll32.exe'
+            - '\regsvr32.exe'
+            - '\msiexec.exe'
+            - '\hh.exe'
+            - '\control.exe'
+            - '\schtasks.exe'
+            - '\regasm.exe'
+            - '\installutil.exe'
+            - '\msdt.exe'
+
+    # Reconnaissance commands
+    selection_child_recon:
+        Image|endswith:
+            - '\whoami.exe'
+            - '\systeminfo.exe'
+            - '\ipconfig.exe'
+            - '\net.exe'
+            - '\net1.exe'
+            - '\nltest.exe'
+            - '\tasklist.exe'
+
+    # Filter: legitimate Office add-in / COM behaviors
+    filter_main_splwow:
+        Image|endswith: '\splwow64.exe'
+
+    filter_main_msohtmed:
+        Image|endswith: '\MsoHtmEd.exe'
+
+    condition: selection_parent and (selection_child_shell or selection_child_lolbin or selection_child_recon) and not 1 of filter_*
+falsepositives:
+    - Legitimate Office add-ins that spawn helper processes
+    - Macro-enabled templates for business automation
+    - Office COM automation from trusted LOB applications
+level: critical

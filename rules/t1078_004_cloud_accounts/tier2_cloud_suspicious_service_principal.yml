@@ -1,0 +1,74 @@
+title: Suspicious Cloud Service Principal Activity
+id: f7c3d9a1-0603-4de0-b8c7-unified-t1078004
+related:
+    - id: a4b5c6d7-8e9f-0a1b-2c3d-4e5f6a7b8c9d  # Sentinel service principal abuse
+      type: derived
+status: test
+description: |
+    Detects suspicious activity related to Azure AD / Entra ID service
+    principals, including new credential additions, permission grants,
+    and OAuth consent to applications with high-risk permissions.
+    Adversaries who gain access to cloud environments often create or
+    modify service principals to establish persistent access.
+    Unified from:
+    - Azure Sentinel (Service Principal Credential Addition)
+    - Elastic cloud_persistence_service_principal_abuse.toml
+    - Splunk ESCU (Azure AD Service Principal Abuse)
+references:
+    - https://attack.mitre.org/techniques/T1078/004/
+    - https://attack.mitre.org/techniques/T1098/001/
+    - https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/security-planning-for-applications
+    - https://posts.specterops.io/azure-privilege-escalation-via-service-principal-abuse-210ae2be2a5
+author: Yuhei Tanaka (Unified from Sentinel, Elastic, Splunk)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.persistence
+    - attack.t1078.004
+    - attack.t1098.001
+    - x-source.azure-sentinel
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    product: azure
+    service: auditlogs
+detection:
+    # New credentials added to service principal
+    selection_credential_add:
+        OperationName:
+            - 'Add service principal credentials'
+            - 'Update application - Certificates and secrets management'
+            - 'Add service principal'
+
+    # High-risk API permissions granted
+    selection_permission_grant:
+        OperationName:
+            - 'Add app role assignment to service principal'
+            - 'Add delegated permission grant'
+            - 'Consent to application'
+
+    # OAuth application consent (potentially malicious)
+    selection_oauth_consent:
+        OperationName: 'Consent to application'
+        TargetResources|contains:
+            - 'Mail.Read'
+            - 'Mail.ReadWrite'
+            - 'Files.ReadWrite.All'
+            - 'Directory.ReadWrite.All'
+            - 'Application.ReadWrite.All'
+            - 'RoleManagement.ReadWrite.Directory'
+
+    # Service principal owner modification
+    selection_owner_change:
+        OperationName:
+            - 'Add owner to service principal'
+            - 'Add owner to application'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Legitimate application registration and configuration
+    - DevOps CI/CD pipeline service principal management
+    - IT automation using managed identities
+level: high

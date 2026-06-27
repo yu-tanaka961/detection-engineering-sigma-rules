@@ -1,0 +1,54 @@
+title: Multiple Failed Logon Attempts Followed by Success
+id: f7c3d9a1-0401-4de0-b8c7-unified-t1078
+related:
+    - id: e86c3eb6-4f3e-4e71-a22f-b1e87f7c7c5b  # SigmaHQ failed then success
+      type: derived
+status: test
+description: |
+    Detects a pattern of multiple failed logon attempts (EventID 4625) followed
+    by a successful logon (EventID 4624) for the same account, indicating a
+    potential successful brute force or credential stuffing attack.
+    This is a fundamental valid account abuse detection that is reliable
+    because Windows authentication logs are architecturally required.
+    Unified from:
+    - SigmaHQ win_security_susp_failed_logons_single_source.yml
+    - Elastic credential_access_brute_force_logon.toml
+    - Splunk ESCU (Brute Force Access Behavior Detected)
+    - Azure Sentinel (Multiple Failed Logon followed by Success)
+references:
+    - https://attack.mitre.org/techniques/T1078/
+    - https://attack.mitre.org/techniques/T1110/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_susp_failed_logons_single_source.yml
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.credential_access
+    - attack.t1078
+    - attack.t1110
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-security-4625
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4625
+
+    filter_main_system:
+        TargetUserName:
+            - 'SYSTEM'
+            - 'ANONYMOUS LOGON'
+
+    condition: selection and not 1 of filter_* | count() by TargetUserName, IpAddress > 5
+    timeframe: 15m
+falsepositives:
+    - Users with expired or recently changed passwords
+    - Service accounts with misconfigured credentials
+    - Automated scripts with incorrect stored credentials
+level: high

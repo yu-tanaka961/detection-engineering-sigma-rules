@@ -1,0 +1,68 @@
+title: Office Macro Execution Indicators
+id: f7c3d9a1-0502-4de0-b8c7-unified-t1566001
+related:
+    - id: 92b59acd-f2b0-4bdf-a9a0-9b2cc60ed72f  # SigmaHQ office macro DLL load
+      type: derived
+status: test
+description: |
+    Detects indicators of Office macro execution by monitoring for the loading
+    of VBE7.DLL (VBA engine) and specific registry modifications associated
+    with macro-enabled document execution.
+    Macro execution is the most common delivery mechanism for spearphishing
+    attachments despite Microsoft's progressive lockdown of macro functionality.
+    Unified from:
+    - SigmaHQ image_load_office_vbadll.yml
+    - Elastic execution_office_macro_indicator.toml
+    - Splunk ESCU (Office Product Spawning Windows Shell)
+references:
+    - https://attack.mitre.org/techniques/T1566/001/
+    - https://attack.mitre.org/techniques/T1059/005/
+    - https://learn.microsoft.com/en-us/deployoffice/security/internet-macros-blocked
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.execution
+    - attack.t1566.001
+    - attack.t1059.005
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-imageload-7
+logsource:
+    category: image_load
+    product: windows
+detection:
+    # VBA engine loaded by Office process
+    selection_vba_dll:
+        ImageLoaded|endswith:
+            - '\VBE7.DLL'
+            - '\VBE7INTL.DLL'
+            - '\VBEUI.DLL'
+
+    selection_office_process:
+        Image|endswith:
+            - '\winword.exe'
+            - '\excel.exe'
+            - '\powerpnt.exe'
+            - '\outlook.exe'
+            - '\msaccess.exe'
+            - '\mspub.exe'
+
+    # Additional: suspicious DLLs loaded alongside VBA
+    selection_suspicious_dll:
+        ImageLoaded|endswith:
+            - '\scrrun.dll'     # Windows Script Runtime
+            - '\wshom.ocx'     # Windows Script Host Object Model
+            - '\amsi.dll'      # AMSI (often targeted for bypass)
+            - '\winhttp.dll'   # HTTP client (download capability)
+            - '\urlmon.dll'    # URL download capability
+
+    condition: selection_office_process and (selection_vba_dll or selection_suspicious_dll)
+falsepositives:
+    - Legitimate macro-enabled Office documents (.xlsm, .docm)
+    - Office templates with VBA automation
+    - Enterprise LOB applications using Excel VBA
+level: medium

@@ -1,0 +1,66 @@
+title: Logon with Previously Dormant Account
+id: f7c3d9a1-0402-4de0-b8c7-unified-t1078
+related:
+    - id: 3d2b1a05-8b58-4519-960c-cc7b6a743e41  # Sentinel dormant account
+      type: derived
+status: test
+description: |
+    Detects successful interactive logon by accounts that have not been used
+    for an extended period. Adversaries frequently compromise dormant accounts
+    as they are less likely to be monitored and may retain elevated privileges.
+    This detection requires baselining account activity, which is typically
+    done in SIEM. The Sigma rule monitors for logon events from accounts
+    with specific dormant indicators.
+    Unified from:
+    - Azure Sentinel (Dormant Account Logon)
+    - Splunk ESCU (Previously Seen Users)
+    - Elastic (Rare User Logon)
+references:
+    - https://attack.mitre.org/techniques/T1078/
+    - https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-use-sign-in-diagnostics
+author: Yuhei Tanaka (Unified from Sentinel, Splunk, Elastic)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.persistence
+    - attack.t1078
+    - x-source.azure-sentinel
+    - x-source.splunk-escu
+    - x-source.elastic-detection-rules
+    - x-evasion-resistance.medium
+    - x-drs.dq-precision
+logsource:
+    product: windows
+    service: security
+detection:
+    # Successful interactive logon
+    selection_logon:
+        EventID: 4624
+        LogonType:
+            - 2   # Interactive
+            - 10  # RemoteInteractive
+
+    # Account re-enabled (indicator of dormant account activation)
+    selection_enabled:
+        EventID: 4722  # Account enabled
+
+    # Account password reset then logon
+    selection_password_reset:
+        EventID: 4724  # Password reset attempt
+
+    # Filter: machine accounts
+    filter_main_machine:
+        TargetUserName|endswith: '$'
+
+    filter_main_system:
+        TargetUserName:
+            - 'SYSTEM'
+            - 'LOCAL SERVICE'
+            - 'NETWORK SERVICE'
+
+    condition: (selection_enabled or selection_password_reset) and not 1 of filter_*
+falsepositives:
+    - Legitimate account re-enablement by IT helpdesk
+    - Seasonal workers or contractors returning after extended absence
+    - Service account maintenance activities
+level: medium

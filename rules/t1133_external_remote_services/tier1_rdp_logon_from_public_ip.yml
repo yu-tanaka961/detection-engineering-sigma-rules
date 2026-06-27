@@ -1,0 +1,73 @@
+title: RDP Logon from Public IP Address
+id: f7c3d9a1-0302-4de0-b8c7-unified-t1133
+related:
+    - id: 259a9cdf-c4dd-4fa2-b243-2269e5ab18a2  # Elastic external RDP
+      type: derived
+status: test
+description: |
+    Detects successful RDP logon (EventID 4624, LogonType 10) from
+    non-RFC1918 IP addresses, indicating external RDP access.
+    Externally-accessible RDP is a top initial access vector and should
+    be monitored closely or restricted via VPN/jump hosts.
+    Unified from:
+    - Elastic initial_access_rdp_from_external.toml
+    - SigmaHQ win_security_rdp_login_from_external.yml
+    - Splunk ESCU (RDP from External Source)
+    - Azure Sentinel (External RDP Connection)
+references:
+    - https://attack.mitre.org/techniques/T1133/
+    - https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-136a
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.t1133
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-security-4624
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4624
+        LogonType: 10
+
+    # Exclude RFC1918 and loopback addresses
+    filter_private_10:
+        IpAddress|startswith: '10.'
+    filter_private_172:
+        IpAddress|startswith:
+            - '172.16.'
+            - '172.17.'
+            - '172.18.'
+            - '172.19.'
+            - '172.20.'
+            - '172.21.'
+            - '172.22.'
+            - '172.23.'
+            - '172.24.'
+            - '172.25.'
+            - '172.26.'
+            - '172.27.'
+            - '172.28.'
+            - '172.29.'
+            - '172.30.'
+            - '172.31.'
+    filter_private_192:
+        IpAddress|startswith: '192.168.'
+    filter_loopback:
+        IpAddress|startswith: '127.'
+    filter_local:
+        IpAddress: '-'
+
+    condition: selection and not 1 of filter_*
+falsepositives:
+    - Legitimate external RDP access through approved bastion hosts
+    - Cloud-hosted jump servers with public IPs
+    - VPN solutions that preserve source IP through NAT
+level: critical

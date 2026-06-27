@@ -1,0 +1,53 @@
+title: RDP Brute Force - Multiple Failed Logon Attempts
+id: f7c3d9a1-0301-4de0-b8c7-unified-t1133
+related:
+    - id: 81192c29-d480-40ef-b5db-23c3a5e31aa5  # SigmaHQ RDP brute force
+      type: derived
+status: test
+description: |
+    Detects potential RDP brute force attacks by monitoring for multiple
+    failed logon attempts (EventID 4625) with LogonType 10 (RemoteInteractive)
+    from the same source. This is a foundational detection for identifying
+    unauthorized remote access attempts against externally exposed RDP.
+    Unified from:
+    - SigmaHQ win_security_rdp_bruteforce.yml
+    - Elastic credential_access_rdp_brute_force.toml
+    - Splunk ESCU (Windows Multiple Account Lockouts)
+    - Azure Sentinel (RDP Brute Force Detection)
+references:
+    - https://attack.mitre.org/techniques/T1133/
+    - https://attack.mitre.org/techniques/T1110/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_rdp_bruteforce.yml
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.credential_access
+    - attack.t1133
+    - attack.t1110.001
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-security-4625
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4625
+        LogonType: 10
+
+    # Filter: well-known service accounts
+    filter_main_system:
+        TargetUserName: 'SYSTEM'
+
+    condition: selection and not 1 of filter_* | count(TargetUserName) by IpAddress > 10
+    timeframe: 5m
+falsepositives:
+    - Users mistyping passwords repeatedly
+    - Automated monitoring systems using RDP for health checks
+    - Legitimate admin tools performing connection tests
+level: high

@@ -1,0 +1,73 @@
+title: Privileged Account Logon from Unusual Source
+id: f7c3d9a1-0403-4de0-b8c7-unified-t1078
+related:
+    - id: f5132f02-7c80-4b05-b767-116c2c5c9a2b  # Elastic admin logon anomaly
+      type: derived
+status: test
+description: |
+    Detects logon events by privileged accounts (Domain Admins, Enterprise Admins,
+    local administrators) from workstations or IP addresses that are not typically
+    associated with administrative activity. Adversaries using compromised admin
+    credentials often trigger this pattern because they access systems from
+    endpoints outside the normal admin baseline.
+    Unified from:
+    - Elastic privilege_escalation_admin_logon_anomaly.toml
+    - Azure Sentinel (Admin Logon from Non-Admin Workstation)
+    - Splunk ESCU (Detect Excessive Account Lockouts / Unusual Admin Logon)
+    - SigmaHQ win_security_admin_logon_non_dc.yml
+references:
+    - https://attack.mitre.org/techniques/T1078/
+    - https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/security-best-practices/appendix-f--securing-domain-admins-groups-in-active-directory
+author: Yuhei Tanaka (Unified from Elastic, Sentinel, Splunk, SigmaHQ)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.privilege_escalation
+    - attack.t1078
+    - x-source.elastic-detection-rules
+    - x-source.azure-sentinel
+    - x-source.splunk-escu
+    - x-source.sigmahq
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    product: windows
+    service: security
+detection:
+    # Special logon with admin privileges assigned
+    selection_special_logon:
+        EventID: 4672
+
+    # Successful logon
+    selection_logon:
+        EventID: 4624
+        LogonType:
+            - 2   # Interactive
+            - 10  # RemoteInteractive
+            - 3   # Network
+
+    # Target: known admin group SIDs
+    selection_admin_groups:
+        TargetUserSid|contains:
+            - '-500'   # Built-in Administrator
+            - '-512'   # Domain Admins
+            - '-519'   # Enterprise Admins
+            - '-544'   # Administrators (built-in)
+
+    # Filter: Domain Controllers (expected admin logon targets)
+    filter_main_dc:
+        WorkstationName|endswith:
+            - 'DC'
+            - 'DC01'
+            - 'DC02'
+
+    # Filter: known admin workstations (environment-specific, customize)
+    filter_main_admin_ws:
+        WorkstationName|startswith: 'ADMIN-'
+
+    condition: (selection_special_logon or (selection_logon and selection_admin_groups)) and not 1 of filter_*
+falsepositives:
+    - Administrators logging in from personal workstations in emergency
+    - Initial setup of new admin workstations
+    - Break-glass account usage during incidents
+level: high

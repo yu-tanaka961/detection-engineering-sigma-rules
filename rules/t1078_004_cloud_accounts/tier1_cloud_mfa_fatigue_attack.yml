@@ -1,0 +1,57 @@
+title: MFA Fatigue Attack - Multiple Push Notification Rejections
+id: f7c3d9a1-0602-4de0-b8c7-unified-t1078004
+related:
+    - id: 7d9b2c45-1e8a-4f3c-b5d6-ae4f7c8d9e10  # Sentinel MFA fatigue
+      type: derived
+status: test
+description: |
+    Detects MFA fatigue (push bombing) attacks by monitoring for multiple
+    MFA push notification rejections or timeouts followed by an eventual
+    approval. Adversaries with valid credentials repeatedly trigger MFA
+    push notifications until the user accidentally or intentionally approves.
+    This attack pattern was notably used in the Uber breach (2022) and
+    Cisco breach (2022).
+    Unified from:
+    - Azure Sentinel (MFA Fatigue Detection)
+    - Splunk ESCU (Azure AD Multiple MFA Requests)
+    - Elastic cloud_auth_mfa_bombing.toml
+references:
+    - https://attack.mitre.org/techniques/T1078/004/
+    - https://attack.mitre.org/techniques/T1621/
+    - https://www.uber.com/newsroom/security-update/
+    - https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-mfa-number-match
+author: Yuhei Tanaka (Unified from Sentinel, Splunk, Elastic)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.credential_access
+    - attack.t1078.004
+    - attack.t1621
+    - x-source.azure-sentinel
+    - x-source.splunk-escu
+    - x-source.elastic-detection-rules
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    product: azure
+    service: signinlogs
+detection:
+    # MFA denied / timed out / failed
+    selection_mfa_denied:
+        ResultType:
+            - 500121  # MFA challenge failed
+            - 50074   # Strong auth required
+            - 50076   # MFA required - not satisfied
+            - 53003   # Blocked by Conditional Access
+
+    selection_mfa_status:
+        Status: 'Failure'
+        AuthenticationRequirement: 'multiFactorAuthentication'
+
+    condition: selection_mfa_denied or selection_mfa_status | count() by UserPrincipalName > 5
+    timeframe: 10m
+falsepositives:
+    - Users having genuine issues with their MFA device
+    - MFA device battery depletion or connectivity problems
+    - Misconfigured MFA registration for new devices
+level: high

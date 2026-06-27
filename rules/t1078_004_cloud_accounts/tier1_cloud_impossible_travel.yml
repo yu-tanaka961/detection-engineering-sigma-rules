@@ -1,0 +1,62 @@
+title: Cloud Account Sign-In from Geographically Impossible Location
+id: f7c3d9a1-0601-4de0-b8c7-unified-t1078004
+related:
+    - id: 2c5e4a6a-7a3b-49d1-8b34-c4e0b9e1c3f0  # Sentinel impossible travel
+      type: derived
+status: test
+description: |
+    Detects cloud account sign-in events from geographically impossible locations
+    based on Azure AD / Entra ID sign-in logs. When a user authenticates from
+    two locations within a time window that makes physical travel impossible,
+    it indicates credential compromise.
+    This detection uses Azure AD Sign-In logs and requires mapping of IP
+    addresses to geographic locations.
+    Unified from:
+    - Azure Sentinel (Impossible Travel Activity)
+    - Splunk ESCU (Azure AD Impossible Travel)
+    - Elastic cloud_auth_impossible_travel.toml
+references:
+    - https://attack.mitre.org/techniques/T1078/004/
+    - https://learn.microsoft.com/en-us/entra/id-protection/concept-identity-protection-risks
+    - https://learn.microsoft.com/en-us/entra/identity/monitoring-health/reference-sign-ins-error-codes
+author: Yuhei Tanaka (Unified from Sentinel, Splunk, Elastic)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.t1078.004
+    - x-source.azure-sentinel
+    - x-source.splunk-escu
+    - x-source.elastic-detection-rules
+    - x-evasion-resistance.medium
+    - x-drs.dq-precision
+logsource:
+    product: azure
+    service: signinlogs
+detection:
+    # Successful sign-in events
+    selection:
+        Status: 'Success'
+        ResultType: 0
+
+    # Risky sign-in properties (Azure AD Identity Protection)
+    selection_risk:
+        RiskLevelDuringSignIn|contains:
+            - 'high'
+            - 'medium'
+
+    selection_risk_detail:
+        RiskDetail|contains:
+            - 'impossibleTravel'
+            - 'unfamiliarFeatures'
+            - 'anomalousToken'
+
+    # Filter: known VPN/proxy services that appear as travel
+    filter_main_conditional_access:
+        ConditionalAccessStatus: 'success'
+
+    condition: selection and (selection_risk or selection_risk_detail)
+falsepositives:
+    - VPN usage that changes apparent geographic location
+    - Corporate proxy servers in different regions
+    - Users with dual-SIM phones or satellite internet
+level: high

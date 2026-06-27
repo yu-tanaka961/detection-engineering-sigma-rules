@@ -1,0 +1,96 @@
+title: Suspicious File Written by Email Client or Office Application
+id: f7c3d9a1-0503-4de0-b8c7-unified-t1566001
+related:
+    - id: c7a74c80-ba5a-486e-9572-798f2c3a4b8f  # SigmaHQ Office temp file
+      type: derived
+status: test
+description: |
+    Detects Office applications or email clients writing executable or script
+    files to disk, indicating potential spearphishing payload delivery.
+    When a user opens a malicious attachment, the embedded payload is often
+    extracted to a temporary location before execution.
+    Unified from:
+    - SigmaHQ file_event_win_office_temp_file.yml
+    - Elastic initial_access_office_suspicious_file_write.toml
+    - Splunk ESCU (Office Document Dropped Executable)
+    - Azure Sentinel (Suspicious File Write by Office Application)
+references:
+    - https://attack.mitre.org/techniques/T1566/001/
+    - https://attack.mitre.org/techniques/T1204/002/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.initial_access
+    - attack.t1566.001
+    - attack.t1204.002
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-filecreate-11
+logsource:
+    category: file_event
+    product: windows
+detection:
+    # Office / email client writing files
+    selection_process:
+        Image|endswith:
+            - '\winword.exe'
+            - '\excel.exe'
+            - '\powerpnt.exe'
+            - '\outlook.exe'
+            - '\msaccess.exe'
+            - '\mspub.exe'
+
+    # Executable and script file extensions
+    selection_extension_exe:
+        TargetFilename|endswith:
+            - '.exe'
+            - '.dll'
+            - '.scr'
+            - '.com'
+            - '.pif'
+
+    selection_extension_script:
+        TargetFilename|endswith:
+            - '.bat'
+            - '.cmd'
+            - '.ps1'
+            - '.vbs'
+            - '.vbe'
+            - '.js'
+            - '.jse'
+            - '.wsf'
+            - '.wsh'
+            - '.hta'
+
+    selection_extension_other:
+        TargetFilename|endswith:
+            - '.lnk'
+            - '.iso'
+            - '.img'
+            - '.vhd'
+            - '.vhdx'
+
+    # Common temp / staging paths
+    selection_temp_path:
+        TargetFilename|contains:
+            - '\AppData\Local\Temp\'
+            - '\Users\Public\'
+            - '\ProgramData\'
+            - '\Windows\Temp\'
+
+    # Filter: normal Office temp behavior
+    filter_main_office_temp:
+        TargetFilename|endswith:
+            - '.tmp'
+            - '.olk'
+
+    condition: selection_process and (selection_extension_exe or selection_extension_script or selection_extension_other) and not 1 of filter_*
+falsepositives:
+    - Legitimate email attachments being saved by the user
+    - Office add-ins installing components
+    - Macro-enabled documents creating expected helper files
+level: high
