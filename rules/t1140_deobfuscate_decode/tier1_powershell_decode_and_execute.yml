@@ -1,0 +1,85 @@
+title: PowerShell Decode and Execute Pattern
+id: f7c3d9a1-2302-4de0-b8c7-unified-t1140
+related:
+    - id: e5f6a7b8-c9d0-1e2f-3a4b-unified-t1140ps  # Elastic powershell decode
+      type: derived
+status: test
+description: |
+    Detects PowerShell commands that decode or decompress content and then
+    execute it. This pattern combines deobfuscation (FromBase64String,
+    GzipStream, DeflateStream) with execution (Invoke-Expression, iex,
+    Invoke-Command). This two-stage pattern is the hallmark of fileless
+    malware delivery.
+    Unified from:
+    - Elastic defense_evasion_posh_decode_execute.toml
+    - SigmaHQ posh_ps_decode_and_execute.yml
+    - Splunk ESCU (PowerShell Decode and Execute)
+    - Azure Sentinel (PowerShell Encoded Execution)
+references:
+    - https://attack.mitre.org/techniques/T1140/
+    - https://attack.mitre.org/techniques/T1059/001/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.execution
+    - attack.t1140
+    - attack.t1059.001
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.powershell-scriptblock-4104
+logsource:
+    product: windows
+    category: ps_script
+    definition: 'PowerShell ScriptBlock Logging (EventID 4104) must be enabled'
+detection:
+    # Decode function present
+    selection_decode:
+        ScriptBlockText|contains:
+            - 'FromBase64String'
+            - '[Convert]::FromBase64'
+            - '[System.Convert]::FromBase64'
+            - 'IO.Compression.GzipStream'
+            - 'IO.Compression.DeflateStream'
+            - 'IO.MemoryStream'
+            - 'Text.Encoding]::UTF8.GetString'
+            - 'Text.Encoding]::ASCII.GetString'
+            - 'Text.Encoding]::Unicode.GetString'
+
+    # Execution function present
+    selection_execute:
+        ScriptBlockText|contains:
+            - 'Invoke-Expression'
+            - 'iex '
+            - 'iex('
+            - '| iex'
+            - 'Invoke-Command'
+            - '.Invoke('
+            - 'Start-Process'
+            - 'New-Object System.Net.WebClient'
+            - '[ScriptBlock]::Create'
+
+    # Combined decode + download pattern
+    selection_download_decode:
+        ScriptBlockText|contains:
+            - 'Net.WebClient'
+            - 'DownloadString'
+            - 'DownloadData'
+            - 'Invoke-WebRequest'
+            - 'Invoke-RestMethod'
+            - 'wget '
+            - 'curl '
+        ScriptBlockText|contains:
+            - 'FromBase64'
+            - 'Decompress'
+            - 'GzipStream'
+
+    condition: (selection_decode and selection_execute) or selection_download_decode
+falsepositives:
+    - Legitimate automation scripts using encoded parameters
+    - Configuration management tools deploying encoded configurations
+level: high

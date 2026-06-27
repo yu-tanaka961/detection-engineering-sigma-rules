@@ -1,0 +1,83 @@
+title: Rundll32 Suspicious Execution Patterns
+id: f7c3d9a1-2201-4de0-b8c7-unified-t1218011
+related:
+    - id: a1b2c3d4-e5f6-7a8b-9c0d-unified-rundll32  # SigmaHQ rundll32
+      type: derived
+status: test
+description: |
+    Detects suspicious rundll32.exe execution patterns including JavaScript
+    protocol handler abuse, remote DLL loading via UNC/HTTP, and known
+    LOLBin proxy techniques. Rundll32 is a trusted Microsoft binary that
+    can load arbitrary DLLs and execute exported functions, making it a
+    prime candidate for defense evasion.
+    Unified from:
+    - SigmaHQ proc_creation_win_rundll32_susp_activity.yml
+    - Elastic defense_evasion_rundll32_suspicious.toml
+    - Splunk ESCU (Rundll32 Suspicious Execution)
+    - Azure Sentinel (Rundll32 Abuse Detection)
+references:
+    - https://attack.mitre.org/techniques/T1218/011/
+    - https://lolbas-project.github.io/lolbas/Binaries/Rundll32/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.t1218.011
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_rundll32:
+        - Image|endswith: '\rundll32.exe'
+        - OriginalFileName: 'RUNDLL32.EXE'
+
+    # JavaScript/VBScript protocol handler
+    selection_script_protocol:
+        CommandLine|contains:
+            - 'javascript:'
+            - 'vbscript:'
+
+    # Remote DLL via HTTP/HTTPS
+    selection_remote_http:
+        CommandLine|contains:
+            - 'http://'
+            - 'https://'
+            - 'ftp://'
+
+    # Remote DLL via UNC path
+    selection_remote_unc:
+        CommandLine|re: '\\\\[^\\]+\\.*\.dll'
+
+    # Known proxy execution functions
+    selection_proxy_functions:
+        CommandLine|contains:
+            - 'shell32.dll,ShellExec_RunDLL'
+            - 'shell32.dll,Control_RunDLL'
+            - 'url.dll,FileProtocolHandler'
+            - 'url.dll,OpenURL'
+            - 'zipfldr.dll,RouteTheCall'
+            - 'ieframe.dll,OpenURL'
+            - 'shdocvw.dll,OpenURL'
+            - 'advpack.dll,LaunchINFSection'
+            - 'advpack.dll,RegisterOCX'
+            - 'pcwutl.dll,LaunchApplication'
+            - 'dfshim.dll,ShOpenVerbApplication'
+
+    # Rundll32 without arguments (potential injection target)
+    selection_no_args:
+        CommandLine|endswith:
+            - '\rundll32.exe'
+            - '\rundll32'
+            - 'rundll32.exe"'
+
+    condition: selection_rundll32 and (selection_script_protocol or selection_remote_http or selection_remote_unc or selection_proxy_functions or selection_no_args)
+falsepositives:
+    - Legitimate Control Panel item execution via shell32.dll,Control_RunDLL
+    - Software using rundll32 for DLL registration
+level: high

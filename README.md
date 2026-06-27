@@ -96,10 +96,18 @@ detection-engineering-sigma-rules/
 │   │   ├── tier1_suspicious_encoded_content.yml
 │   │   ├── tier1_double_extension_or_rtlo.yml
 │   │   └── tier2_scriptblock_deobfuscation_indicators.yml
-│   └── t1218_system_binary_proxy_execution/ # MITRE ATT&CK T1218
-│       ├── tier1_mshta_suspicious_execution.yml
-│       ├── tier1_cmstp_msiexec_proxy_execution.yml
-│       └── tier2_lolbin_unusual_network_connection.yml
+│   ├── t1218_system_binary_proxy_execution/ # MITRE ATT&CK T1218
+│   │   ├── tier1_mshta_suspicious_execution.yml
+│   │   ├── tier1_cmstp_msiexec_proxy_execution.yml
+│   │   └── tier2_lolbin_unusual_network_connection.yml
+│   ├── t1218_011_rundll32/            # MITRE ATT&CK T1218.011
+│   │   ├── tier1_rundll32_suspicious_execution.yml
+│   │   ├── tier1_rundll32_suspicious_dll_path.yml
+│   │   └── tier2_rundll32_abnormal_parent_or_network.yml
+│   └── t1140_deobfuscate_decode/      # MITRE ATT&CK T1140
+│       ├── tier1_certutil_decode_operations.yml
+│       ├── tier1_powershell_decode_and_execute.yml
+│       └── tier2_compiled_html_or_xsl_decode.yml
 └── docs/
     ├── t1059_001_cross_source_analysis.md
     ├── t1003_006_cross_source_analysis.md
@@ -122,7 +130,9 @@ detection-engineering-sigma-rules/
     ├── t1546_011_cross_source_analysis.md
     ├── t1070_004_cross_source_analysis.md
     ├── t1027_cross_source_analysis.md
-    └── t1218_cross_source_analysis.md
+    ├── t1218_cross_source_analysis.md
+    ├── t1218_011_cross_source_analysis.md
+    └── t1140_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -352,6 +362,26 @@ detection-engineering-sigma-rules/
 | [CMSTP/MSIExec/InstallUtil Proxy](rules/t1218_system_binary_proxy_execution/tier1_cmstp_msiexec_proxy_execution.yml) | 1 | High | process_creation | Medium |
 | [LOLBin Network Connection](rules/t1218_system_binary_proxy_execution/tier2_lolbin_unusual_network_connection.yml) | 2 | High | sysmon (3) | High |
 
+### T1218.011 — Rundll32
+
+3 unified Sigma rules detecting rundll32.exe abuse for proxy execution, suspicious DLL loading, and abnormal process relationships.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Rundll32 Suspicious Execution](rules/t1218_011_rundll32/tier1_rundll32_suspicious_execution.yml) | 1 | High | process_creation | Medium |
+| [Rundll32 Suspicious DLL Path](rules/t1218_011_rundll32/tier1_rundll32_suspicious_dll_path.yml) | 1 | High | process_creation | High |
+| [Rundll32 Abnormal Parent/Network](rules/t1218_011_rundll32/tier2_rundll32_abnormal_parent_or_network.yml) | 2 | Critical | process_creation | High |
+
+### T1140 — Deobfuscate/Decode Files or Information
+
+3 unified Sigma rules detecting payload deobfuscation via certutil, PowerShell decode-execute chains, and CHM/XSL script processing.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Certutil Decode Operations](rules/t1140_deobfuscate_decode/tier1_certutil_decode_operations.yml) | 1 | High | process_creation | Medium |
+| [PowerShell Decode and Execute](rules/t1140_deobfuscate_decode/tier1_powershell_decode_and_execute.yml) | 1 | High | ps_script (4104) | High |
+| [CHM/XSL Script Processing](rules/t1140_deobfuscate_decode/tier2_compiled_html_or_xsl_decode.yml) | 2 | High | process_creation | Medium |
+
 ### Tiering Strategy
 
 - **Tier 1**: High-confidence, broad-coverage rules. Deploy immediately with minimal tuning.
@@ -425,6 +455,8 @@ Rules use extended tags to encode detection quality dimensions:
 - [MITRE ATT&CK T1070.004](https://attack.mitre.org/techniques/T1070/004/)
 - [MITRE ATT&CK T1027](https://attack.mitre.org/techniques/T1027/)
 - [MITRE ATT&CK T1218](https://attack.mitre.org/techniques/T1218/)
+- [MITRE ATT&CK T1218.011](https://attack.mitre.org/techniques/T1218/011/)
+- [MITRE ATT&CK T1140](https://attack.mitre.org/techniques/T1140/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
@@ -451,6 +483,8 @@ Rules use extended tags to encode detection quality dimensions:
 - [T1070.004 Cross-source analysis](docs/t1070_004_cross_source_analysis.md)
 - [T1027 Cross-source analysis](docs/t1027_cross_source_analysis.md)
 - [T1218 Cross-source analysis](docs/t1218_cross_source_analysis.md)
+- [T1218.011 Cross-source analysis](docs/t1218_011_cross_source_analysis.md)
+- [T1140 Cross-source analysis](docs/t1140_cross_source_analysis.md)
 
 ## Author
 

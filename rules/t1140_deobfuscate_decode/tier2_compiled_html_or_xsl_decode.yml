@@ -1,0 +1,92 @@
+title: Compiled HTML or XSL Script Processing for Payload Delivery
+id: f7c3d9a1-2303-4de0-b8c7-unified-t1140
+related:
+    - id: f6a7b8c9-d0e1-2f3a-4b5c-unified-t1140chm  # SigmaHQ CHM/XSL
+      type: derived
+status: test
+description: |
+    Detects usage of hh.exe (Compiled HTML Help) and msxsl.exe/wmic XSL
+    processing for payload deobfuscation and execution. CHM files can
+    contain embedded scripts that execute when opened. XSL (Extensible
+    Stylesheet Language) files can contain JScript/VBScript that executes
+    during XSLT transformation, providing a deobfuscation and execution
+    vector.
+    Unified from:
+    - SigmaHQ proc_creation_win_hh_chm_susp.yml, proc_creation_win_xsl_script.yml
+    - Elastic defense_evasion_chm_execution.toml, defense_evasion_xsl_script.toml
+    - Splunk ESCU (CHM Suspicious Execution, XSL Script Processing)
+references:
+    - https://attack.mitre.org/techniques/T1140/
+    - https://attack.mitre.org/techniques/T1218/001/
+    - https://attack.mitre.org/techniques/T1220/
+    - https://lolbas-project.github.io/lolbas/Binaries/Hh/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.t1140
+    - attack.t1218.001
+    - attack.t1220
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # hh.exe loading CHM from suspicious location
+    selection_chm_suspicious:
+        Image|endswith: '\hh.exe'
+        CommandLine|contains:
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\Downloads\'
+            - '\Desktop\'
+            - 'http://'
+            - 'https://'
+
+    # hh.exe spawned by suspicious parent
+    selection_chm_parent:
+        Image|endswith: '\hh.exe'
+        ParentImage|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\mshta.exe'
+
+    # msxsl.exe execution (rarely legitimate)
+    selection_msxsl:
+        Image|endswith: '\msxsl.exe'
+
+    # WMIC XSL script processing
+    selection_wmic_xsl:
+        Image|endswith: '\wmic.exe'
+        CommandLine|contains:
+            - '/format:'
+            - '-format:'
+        CommandLine|contains:
+            - '.xsl'
+            - 'http://'
+            - 'https://'
+            - '\\'
+
+    # XSL files from suspicious locations
+    selection_xsl_suspicious:
+        CommandLine|contains:
+            - '.xsl'
+        CommandLine|contains:
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\Downloads\'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Legitimate CHM help file usage from standard locations
+    - WMIC format output using built-in XSL stylesheets
+level: high

@@ -1,0 +1,73 @@
+title: Rundll32 Loading DLL from Suspicious Path
+id: f7c3d9a1-2202-4de0-b8c7-unified-t1218011
+related:
+    - id: b2c3d4e5-f6a7-8b9c-0d1e-unified-rundll32p  # Elastic rundll32 path
+      type: derived
+status: test
+description: |
+    Detects rundll32.exe loading DLLs from user-writable or temporary
+    directories. Legitimate rundll32 usage typically loads DLLs from
+    System32, Program Files, or other protected directories. Loading
+    from Temp, AppData, Downloads, or ProgramData indicates potential
+    malicious DLL execution.
+    Unified from:
+    - Elastic defense_evasion_rundll32_unusual_dll_path.toml
+    - SigmaHQ proc_creation_win_rundll32_susp_dll_path.yml
+    - Splunk ESCU (Rundll32 Unusual DLL Path)
+references:
+    - https://attack.mitre.org/techniques/T1218/011/
+    - https://lolbas-project.github.io/lolbas/Binaries/Rundll32/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.t1218.011
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_rundll32:
+        - Image|endswith: '\rundll32.exe'
+        - OriginalFileName: 'RUNDLL32.EXE'
+
+    # DLL in user-writable directories
+    selection_user_paths:
+        CommandLine|contains:
+            - '\Users\'
+            - '\Temp\'
+            - '\AppData\'
+            - '\Downloads\'
+            - '\Desktop\'
+            - '\Documents\'
+            - '\ProgramData\'
+            - '\Users\Public\'
+            - '\Recycle'
+
+    # DLL with suspicious extension or naming
+    selection_suspicious_dll:
+        CommandLine|contains:
+            - '.dat,'
+            - '.tmp,'
+            - '.log,'
+            - '.txt,'
+            - '.bin,'
+            - '.jpg,'
+            - '.png,'
+            - '.bmp,'
+
+    # Filter: known legitimate paths
+    filter_legit_callers:
+        ParentImage|endswith:
+            - '\msiexec.exe'
+            - '\explorer.exe'
+
+    condition: selection_rundll32 and (selection_user_paths or selection_suspicious_dll) and not filter_legit_callers
+falsepositives:
+    - Software installers extracting and loading DLLs from temp directories
+    - Browser extensions using rundll32 for DLL operations
+level: high

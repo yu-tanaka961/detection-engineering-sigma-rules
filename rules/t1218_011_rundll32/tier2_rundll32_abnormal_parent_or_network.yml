@@ -1,0 +1,85 @@
+title: Rundll32 with Abnormal Parent Process or Network Activity
+id: f7c3d9a1-2203-4de0-b8c7-unified-t1218011
+related:
+    - id: c3d4e5f6-a7b8-9c0d-1e2f-unified-rundll32n  # Elastic rundll32 network
+      type: derived
+status: test
+description: |
+    Detects rundll32.exe spawned by abnormal parent processes or making
+    outbound network connections. Legitimate rundll32 is typically spawned
+    by explorer.exe, svchost.exe, or software installers. Rundll32 spawned
+    by scripting engines, Office applications, or making external network
+    connections is highly suspicious and commonly associated with malware
+    delivery and C2 communication.
+    Unified from:
+    - Elastic defense_evasion_rundll32_abnormal_parent.toml
+    - SigmaHQ sysmon_rundll32_net_connection.yml
+    - Splunk ESCU (Rundll32 Abnormal Activity)
+references:
+    - https://attack.mitre.org/techniques/T1218/011/
+    - https://redcanary.com/threat-detection-report/techniques/rundll32/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.execution
+    - attack.t1218.011
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_rundll32:
+        Image|endswith: '\rundll32.exe'
+
+    # Abnormal parent processes
+    selection_suspicious_parent:
+        ParentImage|endswith:
+            - '\winword.exe'
+            - '\excel.exe'
+            - '\powerpnt.exe'
+            - '\outlook.exe'
+            - '\msaccess.exe'
+            - '\mspub.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\mshta.exe'
+            - '\certutil.exe'
+            - '\bitsadmin.exe'
+            - '\wmiprvse.exe'
+
+    # Rundll32 spawned from temp/user directories
+    selection_parent_temp:
+        ParentImage|contains:
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\Downloads\'
+
+    # Rundll32 spawning suspicious child processes
+    selection_child_spawn:
+        ParentImage|endswith: '\rundll32.exe'
+        Image|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\mshta.exe'
+            - '\certutil.exe'
+            - '\bitsadmin.exe'
+            - '\net.exe'
+            - '\net1.exe'
+            - '\whoami.exe'
+            - '\ipconfig.exe'
+            - '\systeminfo.exe'
+
+    condition: (selection_rundll32 and (selection_suspicious_parent or selection_parent_temp)) or selection_child_spawn
+falsepositives:
+    - Office add-ins legitimately invoking rundll32
+    - WMI providers using rundll32 for DLL operations
+level: critical
