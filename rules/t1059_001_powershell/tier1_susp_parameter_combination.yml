@@ -1,0 +1,102 @@
+title: Suspicious PowerShell Execution with Obfuscation Parameters
+id: f7c3d9a1-0002-4de0-b8c7-unified-t1059001
+related:
+    - id: 36210e0d-5b19-485d-a087-c096088885f0  # SigmaHQ parameter variation
+      type: derived
+status: test
+description: |
+    Detects PowerShell execution with suspicious parameter combinations typically used
+    by attack frameworks (Cobalt Strike, Empire, Metasploit, etc.).
+    The combination of -NoProfile, -WindowStyle Hidden, -ExecutionPolicy Bypass, and
+    -NonInteractive is a strong indicator of automated malicious execution.
+    Unified from:
+    - SigmaHQ proc_creation_win_powershell_susp_parameter_variation.yml
+    - Elastic defense_evasion rules (PS parameter-based detections)
+    - Splunk ESCU (Any PowerShell DownloadString, Malicious PowerShell Process)
+    - Azure Sentinel (Suspicious PowerShell command patterns)
+references:
+    - https://attack.mitre.org/techniques/T1059/001/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_susp_parameter_variation.yml
+    - https://www.mandiant.com/resources/blog/apt29-defense-evasion
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.defense_evasion
+    - attack.t1059.001
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-precision
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith:
+              - '\powershell.exe'
+              - '\pwsh.exe'
+        - OriginalFileName:
+              - 'PowerShell.EXE'
+              - 'pwsh.dll'
+    # -NoProfile variations (from Sigma + Splunk)
+    selection_noprofile:
+        CommandLine|contains:
+            - ' -NoP '
+            - ' -NoP"'
+            - ' /NoP '
+            - ' -noprofile'
+            - ' /noprofile'
+    # -WindowStyle Hidden variations
+    selection_hidden:
+        CommandLine|contains:
+            - ' -W Hidden'
+            - ' -W 1'
+            - ' -Wi Hi'
+            - ' -Win Hi'
+            - ' -Wind Hi'
+            - ' -Windo Hi'
+            - ' -Window Hi'
+            - ' -Windows Hi'
+            - ' -WindowS Hi'
+            - ' -WindowSt Hi'
+            - ' -WindowSty Hi'
+            - ' -WindowStyl Hi'
+            - ' -WindowStyle Hi'
+            - ' /W Hidden'
+            - ' /Window Hidden'
+            - ' /WindowStyle Hidden'
+    # -ExecutionPolicy Bypass variations
+    selection_bypass:
+        CommandLine|contains:
+            - ' -Ep Bypass'
+            - ' -Exec Bypass'
+            - ' -Execu Bypass'
+            - ' -ExecutionP Bypass'
+            - ' -ExecutionPolicy Bypass'
+            - ' /Ep Bypass'
+            - ' /Exec Bypass'
+            - ' /ExecutionPolicy Bypass'
+    # -NonInteractive variations
+    selection_noninteractive:
+        CommandLine|contains:
+            - ' -NonI'
+            - ' -NonIn'
+            - ' -NonInt'
+            - ' -NonInter'
+            - ' -NonIntera'
+            - ' -NonInterac'
+            - ' -NonInteract'
+            - ' -NonInteracti'
+            - ' -NonInteractiv'
+            - ' -NonInteractive'
+            - ' /NonI'
+    # Require at least 2 suspicious parameters together
+    condition: selection_img and (selection_noprofile and selection_hidden) or (selection_img and selection_noprofile and selection_bypass) or (selection_img and selection_hidden and selection_bypass)
+falsepositives:
+    - System administration scripts using -WindowStyle Hidden for background tasks
+    - Configuration management tools with embedded PowerShell
+    - Some vendor software installation scripts
+level: high

@@ -1,0 +1,96 @@
+title: PowerShell Spawned by Suspicious Parent Process
+id: f7c3d9a1-0004-4de0-b8c7-unified-t1059001
+related:
+    - id: 438025f9-5856-4663-83f7-52f878a70a77  # Elastic Office child process
+      type: derived
+status: test
+description: |
+    Detects PowerShell being spawned by processes that should rarely or never execute
+    PowerShell. This parent-child relationship anomaly is a strong indicator of
+    exploitation, macro execution, or webshell activity.
+    This is a high-value detection because parent process relationships are
+    architecturally difficult to spoof (回避困難な痕跡).
+    Unified from:
+    - Elastic initial_access_suspicious_ms_office_child_process.toml
+    - Elastic persistence_webshell_detection.toml
+    - Splunk ESCU (Office Application Spawn PowerShell)
+    - Azure Sentinel (Suspicious process executed by Office application)
+references:
+    - https://attack.mitre.org/techniques/T1059/001/
+    - https://attack.mitre.org/techniques/T1566/001/
+    - https://attack.mitre.org/techniques/T1505/003/
+    - https://github.com/elastic/detection-rules/blob/main/rules/windows/initial_access_suspicious_ms_office_child_process.toml
+author: Yuhei Tanaka (Unified from Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.initial_access
+    - attack.t1059.001
+    - attack.t1566.001
+    - attack.t1505.003
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-tool-change-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_child:
+        - Image|endswith:
+              - '\powershell.exe'
+              - '\pwsh.exe'
+        - OriginalFileName:
+              - 'PowerShell.EXE'
+              - 'pwsh.dll'
+
+    # Office applications (macro execution, DDE, etc.)
+    selection_parent_office:
+        ParentImage|endswith:
+            - '\winword.exe'
+            - '\excel.exe'
+            - '\powerpnt.exe'
+            - '\outlook.exe'
+            - '\msaccess.exe'
+            - '\mspub.exe'
+            - '\visio.exe'
+            - '\onenote.exe'
+            - '\onenoteim.exe'
+            - '\eqnedt32.exe'
+
+    # Web servers (webshell activity)
+    selection_parent_webserver:
+        ParentImage|endswith:
+            - '\w3wp.exe'
+            - '\httpd.exe'
+            - '\nginx.exe'
+            - '\php-cgi.exe'
+            - '\tomcat.exe'
+            - '\UMWorkerProcess.exe'
+            - '\MSExchangeMailboxReplication.exe'
+
+    # PDF readers (exploitation)
+    selection_parent_pdf:
+        ParentImage|endswith:
+            - '\AcroRd32.exe'
+            - '\Acrobat.exe'
+            - '\FoxitReader.exe'
+
+    # Java-based applications (Log4j, Struts etc.)
+    selection_parent_java:
+        ParentImage|endswith:
+            - '\java.exe'
+            - '\javaw.exe'
+
+    # SQL Server (xp_cmdshell abuse)
+    selection_parent_sql:
+        ParentImage|endswith:
+            - '\sqlservr.exe'
+
+    condition: selection_child and (1 of selection_parent_*)
+falsepositives:
+    - Legitimate Office add-ins that use PowerShell for automation
+    - SharePoint workflows that spawn PowerShell
+    - SQL Server Agent jobs with PowerShell steps (should be reviewed)
+level: critical

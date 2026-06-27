@@ -1,0 +1,100 @@
+title: Suspicious PowerShell Base64 Encoded Command Execution
+id: f7c3d9a1-0001-4de0-b8c7-unified-t1059001
+related:
+    - id: ca2092a1-c273-4571-bbab-281b7d2d354e  # SigmaHQ original
+      type: derived
+status: test
+description: |
+    Detects PowerShell execution with Base64 encoded commands.
+    This is a unified rule integrating detection logic from:
+    - SigmaHQ proc_creation_win_powershell_base64_encoded_cmd.yml
+    - Elastic detection-rules (defense_evasion patterns)
+    - Splunk ESCU (Malicious PowerShell Process - Encoded Command)
+    - Azure Sentinel (SecurityEvent-based PS encoded detection)
+    - Elastic Protections Artifacts (behavior-based encoded PS)
+    The rule covers both powershell.exe and pwsh.exe (PowerShell Core),
+    and detects common Base64 payload prefixes used by offensive tools.
+references:
+    - https://attack.mitre.org/techniques/T1059/001/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_base64_encoded_cmd.yml
+    - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1059.001/T1059.001.md
+    - https://github.com/elastic/detection-rules
+    - https://github.com/splunk/security_content
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel, Elastic Protect)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.t1059.001
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-source.elastic-protections-artifacts
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # Process identification - covers powershell.exe, pwsh.exe, and renamed binaries
+    selection_img:
+        - Image|endswith:
+              - '\powershell.exe'
+              - '\pwsh.exe'
+        - OriginalFileName:
+              - 'PowerShell.EXE'
+              - 'pwsh.dll'
+    # EncodedCommand parameter variations (from Sigma + Splunk + Elastic)
+    selection_enc_param:
+        CommandLine|contains:
+            - ' -e '         # shortest abbreviation
+            - ' -en '
+            - ' -enc '
+            - ' -enco '
+            - ' -encod '
+            - ' -encode '
+            - ' -encoded '
+            - ' -encodedc '
+            - ' -encodedco '
+            - ' -encodedcom '
+            - ' -encodedcomm '
+            - ' -encodedcomma '
+            - ' -encodedcomman '
+            - ' -encodedcommand '
+            - ' /e '
+            - ' /en '
+            - ' /enc '
+            - ' /encodedcommand '
+    # Common Base64 payload prefixes (from Sigma + Splunk combined)
+    # JAB = $var assignment, SUVYI = IEX(, SQBFAFgA = I.E.X. (UTF-16LE), aWV4 = iex
+    selection_b64_prefixes:
+        CommandLine|contains:
+            - ' JAB'
+            - ' SUVYI'
+            - ' SQBFAFgA'
+            - ' aQBlAHgA'
+            - ' aWV4I'
+            - ' IAA'
+            - ' IAB'
+            - ' UwB'
+            - ' cwB'
+    # Full -ENCOD parameter match (non-abbreviated form, case variations)
+    selection_encod_full:
+        CommandLine|contains:
+            - '.exe -ENCOD '
+    # Filter: legitimate system administration patterns
+    filter_main_vscode:
+        ParentImage|endswith: '\Code.exe'
+    filter_main_chocolatey:
+        CommandLine|contains: 'chocolatey'
+    filter_main_sccm:
+        ParentImage|endswith:
+            - '\ccmexec.exe'
+            - '\CcmExec.exe'
+    condition: selection_img and (selection_enc_param or selection_b64_prefixes or selection_encod_full) and not 1 of filter_*
+falsepositives:
+    - Administrative scripts using encoded commands for deployment
+    - Configuration management tools (SCCM, Chef, Puppet)
+    - Visual Studio Code integrated terminal
+    - Chocolatey package installations
+level: high

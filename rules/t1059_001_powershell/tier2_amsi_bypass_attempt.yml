@@ -1,0 +1,75 @@
+title: PowerShell AMSI Bypass Attempt
+id: f7c3d9a1-0005-4de0-b8c7-unified-t1059001
+related:
+    - id: 89076f2a-6cb4-4ccc-b7d5-dce82c8e8c73  # Elastic AMSI bypass
+      type: derived
+status: test
+description: |
+    Detects attempts to bypass the Antimalware Scan Interface (AMSI) in PowerShell.
+    AMSI bypass is a prerequisite for many advanced PowerShell attacks and its
+    detection is considered evasion-resistant because the bypass attempt itself
+    generates telemetry in ScriptBlock Logging before AMSI is disabled.
+    Unified from:
+    - Elastic defense_evasion_amsi_bypass_powershell.toml
+    - Splunk ESCU (PowerShell AMSI Bypass)
+    - SigmaHQ (posh_ps_amsi_bypass_pattern.yml, script_block)
+references:
+    - https://attack.mitre.org/techniques/T1059/001/
+    - https://attack.mitre.org/techniques/T1562/001/
+    - https://github.com/elastic/detection-rules/blob/main/rules/windows/defense_evasion_amsi_bypass_powershell.toml
+    - https://s3cur3th1ssh1t.github.io/Bypass_AMSI_by_manual_modification/
+author: Yuhei Tanaka (Unified from Elastic, Splunk, SigmaHQ)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.defense_evasion
+    - attack.t1059.001
+    - attack.t1562.001
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.sigmahq
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    category: ps_script
+    product: windows
+detection:
+    # Pattern 1: Direct AMSI field manipulation via Reflection
+    selection_reflection:
+        ScriptBlockText|contains:
+            - 'System.Management.Automation.AmsiUtils'
+            - 'amsiInitFailed'
+            - 'AmsiInitialize'
+            - 'amsiSession'
+            - 'AmsiScanBuffer'
+            - 'AmsiScanString'
+
+    # Pattern 2: Reflection-based field access to disable AMSI
+    selection_reflection_method:
+        ScriptBlockText|contains|all:
+            - 'GetField('
+            - 'NonPublic'
+            - 'SetValue('
+
+    # Pattern 3: Memory patching approach
+    selection_memory_patch:
+        ScriptBlockText|contains:
+            - '[Runtime.InteropServices.Marshal]::Copy'
+            - 'VirtualProtect'
+            - 'Kernel32'
+            - 'AmsiOpenSession'
+
+    # Pattern 4: Known bypass one-liners and tools
+    selection_known_bypass:
+        ScriptBlockText|contains:
+            - 'Invoke-AmsiBypass'
+            - 'amsi.dll'
+            - 'AmsiContext'
+            - 'PSAmsiScanner'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Security researchers testing AMSI functionality
+    - Antivirus software performing AMSI health checks
+    - AMSI-related diagnostic scripts from Microsoft
+level: critical

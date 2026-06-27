@@ -1,0 +1,115 @@
+title: PowerShell ScriptBlock - Malicious Cmdlets and Patterns
+id: f7c3d9a1-0006-4de0-b8c7-unified-t1059001
+related:
+    - id: 89819aa4-bbd6-46bc-88ec-c7f7fe30efa6  # SigmaHQ malicious PS cmdlets
+      type: derived
+status: test
+description: |
+    Detects known malicious PowerShell cmdlets and patterns via ScriptBlock Logging
+    (EventID 4104). ScriptBlock Logging captures the deobfuscated script content,
+    making it one of the most evasion-resistant data sources for PowerShell detection.
+    Even if the command line is obfuscated, the actual executed script block is logged.
+    This is a core evasion-resistant trace detection.
+    Unified from:
+    - SigmaHQ posh_ps_malicious_commandlets.yml
+    - Splunk ESCU (Malicious PowerShell Commandlets)
+    - Azure Sentinel (Suspicious PowerShell Script Content)
+references:
+    - https://attack.mitre.org/techniques/T1059/001/
+    - https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_logging
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/powershell/powershell_script/posh_ps_malicious_commandlets.yml
+author: Yuhei Tanaka (Unified from SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.t1059.001
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.powershell-scriptblock-4104
+logsource:
+    category: ps_script
+    product: windows
+detection:
+    # Credential Access cmdlets
+    selection_credential:
+        ScriptBlockText|contains:
+            - 'Invoke-Mimikatz'
+            - 'Invoke-NinjaCopy'
+            - 'Get-GPPPassword'
+            - 'Get-Keystrokes'
+            - 'Get-VaultCredential'
+            - 'Invoke-CredentialInjection'
+            - 'Invoke-DCSync'
+            - 'Invoke-Kerberoast'
+            - 'Get-KerberosASTicket'
+
+    # Lateral Movement / Execution cmdlets
+    selection_lateral:
+        ScriptBlockText|contains:
+            - 'Invoke-WMIMethod'
+            - 'Invoke-PSRemoting'
+            - 'Invoke-Command -ComputerName'
+            - 'Enter-PSSession'
+            - 'Invoke-SMBExec'
+            - 'Invoke-PsExec'
+            - 'Invoke-WMIExec'
+            - 'Invoke-DCOM'
+
+    # Reconnaissance cmdlets
+    selection_recon:
+        ScriptBlockText|contains:
+            - 'Get-NetDomain'
+            - 'Get-NetComputer'
+            - 'Get-NetUser'
+            - 'Get-NetGroup'
+            - 'Get-NetGPO'
+            - 'Get-DomainPolicy'
+            - 'Get-DomainController'
+            - 'Find-LocalAdminAccess'
+            - 'Invoke-ShareFinder'
+            - 'Invoke-UserHunter'
+            - 'Get-ADObject'
+            - 'Find-DomainShare'
+            - 'Get-NetSession'
+
+    # Defense Evasion cmdlets
+    selection_evasion:
+        ScriptBlockText|contains:
+            - 'Invoke-Obfuscation'
+            - 'Invoke-CradleCrafter'
+            - 'Invoke-ReflectivePEInjection'
+            - 'Invoke-Shellcode'
+            - 'Invoke-DllInjection'
+            - 'Set-MpPreference -DisableRealtimeMonitoring'
+            - 'Add-MpPreference -ExclusionPath'
+
+    # Exfiltration cmdlets
+    selection_exfil:
+        ScriptBlockText|contains:
+            - 'Invoke-Exfiltration'
+            - 'Invoke-DNSExfiltrator'
+            - 'Out-Minidump'
+            - 'Compress-Archive'
+
+    # Known offensive framework indicators
+    selection_framework:
+        ScriptBlockText|contains:
+            - 'PowerSploit'
+            - 'PowerView'
+            - 'PowerUp'
+            - 'Nishang'
+            - 'Empire'
+            - 'BloodHound'
+            - 'SharpHound'
+            - 'Rubeus'
+            - 'Seatbelt'
+            - 'SharpDump'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Legitimate security assessment tools used by authorized pen testers
+    - Some AD management scripts may use Get-Net* cmdlets
+level: critical

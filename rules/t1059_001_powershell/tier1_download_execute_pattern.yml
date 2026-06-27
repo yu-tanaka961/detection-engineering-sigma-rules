@@ -1,0 +1,113 @@
+title: PowerShell Download and Execute Pattern
+id: f7c3d9a1-0003-4de0-b8c7-unified-t1059001
+related:
+    - id: e6c54571-c8ff-4468-9503-59e4507a9e82  # SigmaHQ download patterns
+      type: derived
+status: test
+description: |
+    Detects PowerShell commands that download content from the internet and execute it.
+    This is a high-confidence indicator of malicious PowerShell usage, commonly seen
+    in initial access, C2 stager delivery, and lateral movement.
+    Unified from:
+    - SigmaHQ proc_creation_win_powershell_susp_download_patterns.yml
+    - Elastic detection-rules (PowerShell download cradle detections)
+    - Splunk ESCU (Any PowerShell DownloadString, PowerShell Invoke-WebRequest)
+    - Azure Sentinel (Suspicious PowerShell Download Activity)
+    - Elastic Protect (behavior: download + execute chain)
+references:
+    - https://attack.mitre.org/techniques/T1059/001/
+    - https://attack.mitre.org/techniques/T1105/
+    - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_susp_download_patterns.yml
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel, Elastic Protect)
+date: 2026/06/28
+tags:
+    - attack.execution
+    - attack.command_and_control
+    - attack.t1059.001
+    - attack.t1105
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-source.elastic-protections-artifacts
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_img:
+        - Image|endswith:
+              - '\powershell.exe'
+              - '\pwsh.exe'
+        - OriginalFileName:
+              - 'PowerShell.EXE'
+              - 'pwsh.dll'
+
+    # Pattern 1: Classic IEX + DownloadString cradle (from Sigma + Splunk)
+    selection_iex_download:
+        CommandLine|contains:
+            - 'IEX ((New-Object Net.WebClient).DownloadString'
+            - 'IEX (New-Object Net.WebClient).DownloadString'
+            - 'IEX((New-Object Net.WebClient).DownloadString'
+            - 'IEX(New-Object Net.WebClient).DownloadString'
+            - 'IEX (New-Object System.Net.WebClient).DownloadString'
+
+    # Pattern 2: Invoke-WebRequest / wget / curl aliases (from Splunk + Elastic)
+    selection_invoke_webrequest:
+        CommandLine|contains:
+            - 'Invoke-WebRequest'
+            - 'iwr '
+            - 'wget '
+            - 'curl '
+
+    # Pattern 3: DownloadFile method (from Sigma + Sentinel)
+    selection_downloadfile:
+        CommandLine|contains:
+            - '(New-Object System.Net.WebClient).DownloadFile('
+            - '(New-Object Net.WebClient).DownloadFile('
+
+    # Pattern 4: Invoke-RestMethod (from Elastic + Splunk)
+    selection_invoke_rest:
+        CommandLine|contains:
+            - 'Invoke-RestMethod'
+            - 'irm '
+
+    # Pattern 5: .NET WebClient / HttpClient direct usage (from Elastic Protect)
+    selection_dotnet_http:
+        CommandLine|contains:
+            - '[System.Net.WebClient]'
+            - '[Net.WebClient]'
+            - 'System.Net.Http.HttpClient'
+            - 'Net.Http.HttpClient'
+
+    # Pattern 6: BitsTransfer (from Splunk + Elastic)
+    selection_bits:
+        CommandLine|contains:
+            - 'Start-BitsTransfer'
+
+    # Execution indicators - presence of IEX or piped execution
+    selection_exec_indicator:
+        CommandLine|contains:
+            - 'IEX'
+            - 'Invoke-Expression'
+            - '| iex'
+            - '|iex'
+
+    # Filter: legitimate software update / package management
+    filter_main_chocolatey:
+        CommandLine|contains: 'chocolatey.org'
+    filter_main_nuget:
+        CommandLine|contains: 'nuget.org'
+    filter_main_psget:
+        CommandLine|contains: 'powershellgallery.com'
+    filter_main_winget:
+        ParentImage|endswith: '\winget.exe'
+
+    condition: selection_img and (selection_iex_download or selection_downloadfile or (selection_invoke_webrequest and selection_exec_indicator) or (selection_invoke_rest and selection_exec_indicator) or (selection_dotnet_http and selection_exec_indicator) or (selection_bits and selection_exec_indicator)) and not 1 of filter_*
+falsepositives:
+    - Software installers that pull packages from remote systems and execute them
+    - Legitimate PowerShell Gallery module installations
+    - Chocolatey/NuGet package management
+    - System administrator scripts with documented web dependencies
+level: high
