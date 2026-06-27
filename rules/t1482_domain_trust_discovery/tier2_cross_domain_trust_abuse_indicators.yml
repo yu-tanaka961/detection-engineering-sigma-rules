@@ -1,0 +1,58 @@
+title: Cross-Domain Trust Abuse Indicators
+id: f7c3d9a1-1482-4de0-b8c7-unified-t1482003
+related:
+  - id: elastic-trust-abuse
+    type: derived
+  - id: splunk-sid-history-abuse
+    type: derived
+status: experimental
+description: |
+  Detects indicators of domain trust abuse including SID History injection,
+  cross-forest ticket requests with SID filtering bypass, and trust key
+  extraction. These techniques enable attackers to escalate from a compromised
+  child domain to the forest root.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1482/
+  - https://adsecurity.org/?p=1772
+  - https://dirkjanm.io/active-directory-forest-trusts-part-one-how-does-sid-filtering-work/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.discovery
+  - attack.lateral_movement
+  - attack.t1482
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_sid_history:
+    CommandLine|contains:
+      - 'sid::add'
+      - 'sid::modify'
+      - 'misc::addsid'
+      - '-sidhistory'
+      - 'SidHistory'
+  selection_trust_key:
+    CommandLine|contains:
+      - 'lsadump::trust'
+      - 'lsadump::dcsync'
+      - '/user:.*\\$'
+      - 'trust::keys'
+  selection_inter_realm:
+    CommandLine|contains:
+      - 'kerberos::golden'
+      - '/sids:'
+      - '/krbtgt:'
+    CommandLine|contains:
+      - '/domain:'
+  condition: selection_sid_history or selection_trust_key or selection_inter_realm
+falsepositives:
+  - Security assessment tools during authorized penetration testing
+level: critical

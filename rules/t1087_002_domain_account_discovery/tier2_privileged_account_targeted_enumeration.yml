@@ -1,0 +1,59 @@
+title: Targeted Privileged Account Enumeration
+id: f7c3d9a1-1087-4de0-b8c7-unified-t1087003
+related:
+  - id: elastic-privileged-account-enum
+    type: derived
+  - id: splunk-admin-enum
+    type: derived
+status: experimental
+description: |
+  Detects targeted enumeration of privileged domain accounts including Domain Admins,
+  Enterprise Admins, service accounts, and accounts with adminCount=1. This focused
+  enumeration suggests an attacker identifying high-value targets for credential theft.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1087/002/
+  - https://adsecurity.org/?p=3658
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.discovery
+  - attack.t1087.002
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  product: windows
+  category: ps_script
+  definition: 'Requires PowerShell ScriptBlock Logging (EventID 4104)'
+detection:
+  selection_admin_enum:
+    ScriptBlockText|contains:
+      - 'Domain Admins'
+      - 'Enterprise Admins'
+      - 'Schema Admins'
+      - 'Account Operators'
+      - 'Backup Operators'
+  selection_admin_filter:
+    ScriptBlockText|contains:
+      - 'adminCount'
+      - 'AdminCount'
+      - '-AdminCount'
+      - 'ServicePrincipalName'
+      - 'msDS-AllowedToDelegateTo'
+  selection_enum_cmdlet:
+    ScriptBlockText|contains:
+      - 'Get-ADUser'
+      - 'Get-DomainUser'
+      - 'Get-NetUser'
+      - 'Get-ADGroupMember'
+      - 'Get-DomainGroupMember'
+      - 'Find-DomainUserLocation'
+  condition: (selection_admin_enum or selection_admin_filter) and selection_enum_cmdlet
+falsepositives:
+  - Legitimate AD security auditing scripts
+  - IT compliance checks for privileged accounts
+level: high

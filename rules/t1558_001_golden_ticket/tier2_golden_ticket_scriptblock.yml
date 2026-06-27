@@ -1,0 +1,56 @@
+title: Golden Ticket Creation via PowerShell ScriptBlock
+id: f7c3d9a1-5583-4de0-b8c7-unified-t1558003
+related:
+  - id: sigmahq-posh-golden-ticket
+    type: derived
+  - id: splunk-golden-ticket-scriptblock
+    type: derived
+status: experimental
+description: |
+  Detects PowerShell ScriptBlock activity related to Golden Ticket creation,
+  including Invoke-Mimikatz with golden ticket parameters, DSInternals KRBTGT
+  operations, and direct Kerberos ticket manipulation via .NET classes.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1558/001/
+  - https://github.com/gentilkiwi/mimikatz
+  - https://github.com/MichaelGrafnetter/DSInternals
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.credential_access
+  - attack.t1558.001
+  - x-source.sigmahq
+  - x-source.splunk-escu
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  product: windows
+  category: ps_script
+  definition: 'Requires PowerShell ScriptBlock Logging (EventID 4104)'
+detection:
+  selection_mimikatz_golden:
+    ScriptBlockText|contains:
+      - 'kerberos::golden'
+      - 'kerberos::ptt'
+      - 'Invoke-Mimikatz'
+  selection_krbtgt:
+    ScriptBlockText|contains:
+      - 'krbtgt'
+      - 'KRBTGT'
+  selection_dsinternals:
+    ScriptBlockText|contains:
+      - 'Get-ADReplAccount'
+      - 'ConvertTo-NTHash'
+      - 'Get-ADDBAccount'
+  selection_ticket_manipulation:
+    ScriptBlockText|contains:
+      - 'KerberosRequestorSecurityToken'
+      - 'System.IdentityModel.Tokens'
+      - 'New-KerberosTicket'
+  condition: (selection_mimikatz_golden and selection_krbtgt) or (selection_dsinternals and selection_krbtgt) or selection_ticket_manipulation
+falsepositives:
+  - Security assessment scripts during authorized penetration testing
+  - DSInternals used for legitimate AD forensics
+level: critical

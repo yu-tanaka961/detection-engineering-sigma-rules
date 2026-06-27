@@ -1,0 +1,57 @@
+title: Domain Trust Enumeration via Built-in Commands
+id: f7c3d9a1-1482-4de0-b8c7-unified-t1482001
+related:
+  - id: sigmahq-nltest-domain-trust
+    type: derived
+  - id: elastic-domain-trust-discovery
+    type: derived
+status: experimental
+description: |
+  Detects domain trust enumeration via nltest, dsquery, and netdom commands.
+  Attackers enumerate trust relationships to identify paths for lateral movement
+  across domains and forests.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1482/
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.discovery
+  - attack.t1482
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_nltest_trust:
+    Image|endswith: '\nltest.exe'
+    CommandLine|contains:
+      - '/domain_trusts'
+      - '/trusted_domains'
+      - '/all_trusts'
+      - '/dclist:'
+  selection_dsquery_trust:
+    Image|endswith: '\dsquery.exe'
+    CommandLine|contains:
+      - 'trustedDomain'
+  selection_netdom:
+    Image|endswith: '\netdom.exe'
+    CommandLine|contains:
+      - 'trust'
+      - 'query'
+  selection_csvde:
+    Image|endswith:
+      - '\csvde.exe'
+      - '\ldifde.exe'
+    CommandLine|contains:
+      - 'trustedDomain'
+  condition: selection_nltest_trust or selection_dsquery_trust or selection_netdom or selection_csvde
+falsepositives:
+  - Legitimate AD administration and trust verification
+  - Domain migration activities
+level: medium

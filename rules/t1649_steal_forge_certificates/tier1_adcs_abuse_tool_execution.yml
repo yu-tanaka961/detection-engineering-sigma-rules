@@ -1,0 +1,69 @@
+title: AD CS Abuse Tool Execution (Certipy/Rubeus/ForgeCert)
+id: f7c3d9a1-6492-4de0-b8c7-unified-t1649002
+related:
+  - id: sigmahq-certipy-execution
+    type: derived
+  - id: elastic-adcs-abuse-tools
+    type: derived
+status: experimental
+description: |
+  Detects execution of known AD CS exploitation tools such as Certipy, Rubeus cert,
+  ForgeCert, PassTheCert, and PKINIT abuse tools. These tools exploit ESC1-ESC8
+  misconfigurations to request or forge certificates for domain privilege escalation.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1649/
+  - https://github.com/ly4k/Certipy
+  - https://github.com/GhostPack/Rubeus
+  - https://github.com/GhostPack/ForgeCert
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.credential_access
+  - attack.t1649
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_certipy:
+    CommandLine|contains:
+      - 'certipy'
+      - 'Certipy'
+  selection_certipy_actions:
+    CommandLine|contains:
+      - ' find '
+      - ' req '
+      - ' auth '
+      - ' forge '
+      - ' shadow '
+      - ' auto '
+  selection_rubeus_cert:
+    CommandLine|contains:
+      - 'Rubeus'
+      - 'rubeus'
+    CommandLine|contains:
+      - 'asktgt'
+      - 'asktgs'
+      - '/certificate:'
+      - '/getcredentials'
+  selection_forgecert:
+    CommandLine|contains:
+      - 'ForgeCert'
+      - 'forgecert'
+      - 'PassTheCert'
+      - 'passthecert'
+  selection_pkinit:
+    CommandLine|contains:
+      - 'gettgtpkinit'
+      - 'gets4uticket'
+      - 'PKINITtools'
+  condition: (selection_certipy and selection_certipy_actions) or selection_rubeus_cert or selection_forgecert or selection_pkinit
+falsepositives:
+  - Security assessment tools during authorized penetration testing
+level: critical

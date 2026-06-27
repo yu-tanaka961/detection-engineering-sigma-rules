@@ -140,10 +140,38 @@ detection-engineering-sigma-rules/
 │   │   ├── tier1_responder_tool_execution.yml
 │   │   ├── tier1_llmnr_nbtns_config_change.yml
 │   │   └── tier2_smb_ntlm_relay_indicators.yml
-│   └── t1552_006_gpp_credentials/     # MITRE ATT&CK T1552.006
-│       ├── tier1_gpp_password_discovery.yml
-│       ├── tier1_sysvol_gpp_file_access.yml
-│       └── tier2_gpp_cpassword_decryption.yml
+│   ├── t1552_006_gpp_credentials/     # MITRE ATT&CK T1552.006
+│   │   ├── tier1_gpp_password_discovery.yml
+│   │   ├── tier1_sysvol_gpp_file_access.yml
+│   │   └── tier2_gpp_cpassword_decryption.yml
+│   ├── t1649_steal_forge_certificates/ # MITRE ATT&CK T1649
+│   │   ├── tier1_certutil_certificate_export.yml
+│   │   ├── tier1_adcs_abuse_tool_execution.yml
+│   │   └── tier2_adcs_certificate_template_abuse.yml
+│   ├── t1558_001_golden_ticket/       # MITRE ATT&CK T1558.001
+│   │   ├── tier1_krbtgt_hash_extraction_tools.yml
+│   │   ├── tier1_golden_ticket_usage_anomaly.yml
+│   │   └── tier2_golden_ticket_scriptblock.yml
+│   ├── t1134_t1558_unconstrained_delegation/ # T1134/T1558 Unconstrained Delegation
+│   │   ├── tier1_unconstrained_delegation_enumeration.yml
+│   │   ├── tier1_tgt_extraction_from_delegation.yml
+│   │   └── tier2_delegation_coercion_attack.yml
+│   ├── t1018_remote_system_discovery/  # MITRE ATT&CK T1018
+│   │   ├── tier1_network_scanning_commands.yml
+│   │   ├── tier1_ad_computer_enumeration.yml
+│   │   └── tier2_network_scanner_tool_execution.yml
+│   ├── t1087_002_domain_account_discovery/ # MITRE ATT&CK T1087.002
+│   │   ├── tier1_net_domain_user_enumeration.yml
+│   │   ├── tier1_ad_user_enumeration_powershell.yml
+│   │   └── tier2_privileged_account_targeted_enumeration.yml
+│   ├── t1482_domain_trust_discovery/   # MITRE ATT&CK T1482
+│   │   ├── tier1_domain_trust_enumeration_commands.yml
+│   │   ├── tier1_domain_trust_powershell_enumeration.yml
+│   │   └── tier2_cross_domain_trust_abuse_indicators.yml
+│   └── t1033_system_owner_user_discovery/ # MITRE ATT&CK T1033
+│       ├── tier1_whoami_system_info_commands.yml
+│       ├── tier1_environment_variable_user_discovery.yml
+│       └── tier2_rapid_recon_command_sequence.yml
 └── docs/
     ├── t1059_001_cross_source_analysis.md
     ├── t1003_006_cross_source_analysis.md
@@ -177,7 +205,14 @@ detection-engineering-sigma-rules/
     ├── t1003_002_cross_source_analysis.md
     ├── t1003_003_cross_source_analysis.md
     ├── t1557_001_cross_source_analysis.md
-    └── t1552_006_cross_source_analysis.md
+    ├── t1552_006_cross_source_analysis.md
+    ├── t1649_cross_source_analysis.md
+    ├── t1558_001_cross_source_analysis.md
+    ├── t1134_t1558_unconstrained_delegation_cross_source_analysis.md
+    ├── t1018_cross_source_analysis.md
+    ├── t1087_002_cross_source_analysis.md
+    ├── t1482_cross_source_analysis.md
+    └── t1033_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -517,6 +552,76 @@ detection-engineering-sigma-rules/
 | [SYSVOL GPP File Access](rules/t1552_006_gpp_credentials/tier1_sysvol_gpp_file_access.yml) | 1 | High | process_creation | High |
 | [GPP cpassword Decryption](rules/t1552_006_gpp_credentials/tier2_gpp_cpassword_decryption.yml) | 2 | Critical | ps_script (4104) | High |
 
+### T1649 — Steal or Forge Authentication Certificates (AD CS)
+
+3 unified Sigma rules detecting AD CS certificate abuse including certificate export, ESC1-ESC8 exploitation tools, and certificate template abuse.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Certificate Export/Request](rules/t1649_steal_forge_certificates/tier1_certutil_certificate_export.yml) | 1 | High | process_creation | Medium |
+| [AD CS Abuse Tool Execution](rules/t1649_steal_forge_certificates/tier1_adcs_abuse_tool_execution.yml) | 1 | Critical | process_creation | Medium |
+| [Certificate Template Abuse (ESC1-8)](rules/t1649_steal_forge_certificates/tier2_adcs_certificate_template_abuse.yml) | 2 | High | security (4886/4887) | High |
+
+### T1558.001 — Golden Ticket (KRBTGT偽造)
+
+3 unified Sigma rules detecting Golden Ticket attacks via KRBTGT hash extraction, anomalous TGT usage, and PowerShell ticket manipulation.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [KRBTGT Hash Extraction Tools](rules/t1558_001_golden_ticket/tier1_krbtgt_hash_extraction_tools.yml) | 1 | Critical | process_creation | Medium |
+| [Golden Ticket Usage Anomaly](rules/t1558_001_golden_ticket/tier1_golden_ticket_usage_anomaly.yml) | 1 | High | security (4768/4769) | High |
+| [Golden Ticket ScriptBlock](rules/t1558_001_golden_ticket/tier2_golden_ticket_scriptblock.yml) | 2 | Critical | ps_script (4104) | High |
+
+### T1134/T1558 — Unconstrained Delegation Abuse
+
+3 unified Sigma rules detecting unconstrained delegation abuse including delegation enumeration, TGT extraction, and authentication coercion attacks.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Delegation Enumeration](rules/t1134_t1558_unconstrained_delegation/tier1_unconstrained_delegation_enumeration.yml) | 1 | High | process_creation | Medium |
+| [TGT Extraction from Delegation](rules/t1134_t1558_unconstrained_delegation/tier1_tgt_extraction_from_delegation.yml) | 1 | Critical | process_creation | Medium |
+| [Authentication Coercion Attack](rules/t1134_t1558_unconstrained_delegation/tier2_delegation_coercion_attack.yml) | 2 | Critical | process_creation | High |
+
+### T1018 — Remote System Discovery
+
+3 unified Sigma rules detecting remote system discovery via network scanning commands, AD computer enumeration, and network scanner tools.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Network Scanning Commands](rules/t1018_remote_system_discovery/tier1_network_scanning_commands.yml) | 1 | Medium | process_creation | Medium |
+| [AD Computer Enumeration](rules/t1018_remote_system_discovery/tier1_ad_computer_enumeration.yml) | 1 | Medium | process_creation | Medium |
+| [Network Scanner Tool Execution](rules/t1018_remote_system_discovery/tier2_network_scanner_tool_execution.yml) | 2 | High | process_creation | Medium |
+
+### T1087.002 — Account Discovery: Domain Account
+
+3 unified Sigma rules detecting domain account enumeration via net/WMIC, PowerShell/LDAP, and targeted privileged account discovery.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Net Domain User Enumeration](rules/t1087_002_domain_account_discovery/tier1_net_domain_user_enumeration.yml) | 1 | Medium | process_creation | Medium |
+| [AD User Enumeration (PowerShell)](rules/t1087_002_domain_account_discovery/tier1_ad_user_enumeration_powershell.yml) | 1 | Medium | process_creation | Medium |
+| [Privileged Account Targeted Enumeration](rules/t1087_002_domain_account_discovery/tier2_privileged_account_targeted_enumeration.yml) | 2 | High | ps_script (4104) | High |
+
+### T1482 — Domain Trust Discovery
+
+3 unified Sigma rules detecting domain trust enumeration via built-in commands, PowerShell/ADFind, and cross-domain trust abuse indicators.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Trust Enumeration Commands](rules/t1482_domain_trust_discovery/tier1_domain_trust_enumeration_commands.yml) | 1 | Medium | process_creation | Medium |
+| [Trust PowerShell/ADFind Enumeration](rules/t1482_domain_trust_discovery/tier1_domain_trust_powershell_enumeration.yml) | 1 | Medium | process_creation | Medium |
+| [Cross-Domain Trust Abuse](rules/t1482_domain_trust_discovery/tier2_cross_domain_trust_abuse_indicators.yml) | 2 | Critical | process_creation | High |
+
+### T1033 — System Owner/User Discovery
+
+3 unified Sigma rules detecting system owner discovery via whoami/user commands, environment variables, and rapid reconnaissance sequences.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [whoami/System Info Commands](rules/t1033_system_owner_user_discovery/tier1_whoami_system_info_commands.yml) | 1 | Medium | process_creation | Medium |
+| [Environment Variable User Discovery](rules/t1033_system_owner_user_discovery/tier1_environment_variable_user_discovery.yml) | 1 | Low | process_creation | Medium |
+| [Rapid Recon Command Sequence](rules/t1033_system_owner_user_discovery/tier2_rapid_recon_command_sequence.yml) | 2 | High | process_creation | High |
+
 ### Tiering Strategy
 
 - **Tier 1**: High-confidence, broad-coverage rules. Deploy immediately with minimal tuning.
@@ -570,6 +675,9 @@ Rules use extended tags to encode detection quality dimensions:
 | Windows Security Kerberos | 4769 | Kerberos TGS request (Kerberoasting) |
 | Sysmon FileAccess | — | Browser credential / DPAPI / SSH key access |
 | Sysmon FileCreate | 11 | SAM/NTDS file copy detection |
+| AD CS Audit | 4886/4887 | Certificate request/issuance |
+| AD CS Audit | 4898/4899 | Certificate template load/modify |
+| Windows Security Kerberos | 4768 | TGT request (Golden Ticket detection) |
 
 ## References
 
@@ -606,6 +714,13 @@ Rules use extended tags to encode detection quality dimensions:
 - [MITRE ATT&CK T1003.003](https://attack.mitre.org/techniques/T1003/003/)
 - [MITRE ATT&CK T1557.001](https://attack.mitre.org/techniques/T1557/001/)
 - [MITRE ATT&CK T1552.006](https://attack.mitre.org/techniques/T1552/006/)
+- [MITRE ATT&CK T1649](https://attack.mitre.org/techniques/T1649/)
+- [MITRE ATT&CK T1558.001](https://attack.mitre.org/techniques/T1558/001/)
+- [MITRE ATT&CK T1134](https://attack.mitre.org/techniques/T1134/)
+- [MITRE ATT&CK T1018](https://attack.mitre.org/techniques/T1018/)
+- [MITRE ATT&CK T1087.002](https://attack.mitre.org/techniques/T1087/002/)
+- [MITRE ATT&CK T1482](https://attack.mitre.org/techniques/T1482/)
+- [MITRE ATT&CK T1033](https://attack.mitre.org/techniques/T1033/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
@@ -643,6 +758,13 @@ Rules use extended tags to encode detection quality dimensions:
 - [T1003.003 Cross-source analysis](docs/t1003_003_cross_source_analysis.md)
 - [T1557.001 Cross-source analysis](docs/t1557_001_cross_source_analysis.md)
 - [T1552.006 Cross-source analysis](docs/t1552_006_cross_source_analysis.md)
+- [T1649 Cross-source analysis](docs/t1649_cross_source_analysis.md)
+- [T1558.001 Cross-source analysis](docs/t1558_001_cross_source_analysis.md)
+- [T1134/T1558 Unconstrained Delegation Cross-source analysis](docs/t1134_t1558_unconstrained_delegation_cross_source_analysis.md)
+- [T1018 Cross-source analysis](docs/t1018_cross_source_analysis.md)
+- [T1087.002 Cross-source analysis](docs/t1087_002_cross_source_analysis.md)
+- [T1482 Cross-source analysis](docs/t1482_cross_source_analysis.md)
+- [T1033 Cross-source analysis](docs/t1033_cross_source_analysis.md)
 
 ## Author
 

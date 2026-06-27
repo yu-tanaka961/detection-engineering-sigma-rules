@@ -1,0 +1,51 @@
+title: Golden Ticket Usage Anomaly (Kerberos TGT Anomaly)
+id: f7c3d9a1-5582-4de0-b8c7-unified-t1558002
+related:
+  - id: sigmahq-kerberos-tgt-anomaly
+    type: derived
+  - id: elastic-golden-ticket-detection
+    type: derived
+status: experimental
+description: |
+  Detects anomalous Kerberos TGT usage that may indicate Golden Ticket attacks.
+  Indicators include TGT with unusual lifetime, encryption downgrade to RC4 for
+  TGT, and authentication events with domain mismatch or non-existent accounts.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1558/001/
+  - https://adsecurity.org/?p=1515
+  - https://www.slideshare.net/gentilkiwi/abusing-microsoft-kerberos-sorry-you-guys-dont-get-it
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.credential_access
+  - attack.t1558.001
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_tgs_without_tgt:
+    EventID: 4769
+  filter_tgs_normal:
+    EventID: 4768
+  selection_rc4_tgt:
+    EventID: 4768
+    TicketEncryptionType: '0x17'
+  selection_logon_anomaly:
+    EventID: 4624
+    LogonType: 3
+    AuthenticationPackageName: 'Kerberos'
+  filter_logon_normal:
+    TargetDomainName|contains:
+      - '$'
+  condition: selection_rc4_tgt or (selection_logon_anomaly and not filter_logon_normal)
+falsepositives:
+  - Legacy systems requiring RC4 encryption
+  - Cross-domain trust authentication
+level: high

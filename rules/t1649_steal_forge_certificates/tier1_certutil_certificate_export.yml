@@ -1,0 +1,58 @@
+title: Suspicious Certificate Export or Request via Certutil/Certreq
+id: f7c3d9a1-6491-4de0-b8c7-unified-t1649001
+related:
+  - id: sigmahq-certutil-export
+    type: derived
+  - id: elastic-adcs-certificate-request
+    type: derived
+status: experimental
+description: |
+  Detects certificate export or enrollment requests via certutil.exe or certreq.exe
+  that may indicate AD CS abuse (ESC1-ESC8). Attackers request certificates with
+  subject alternative names or export existing certificates for impersonation.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1649/
+  - https://posts.specterops.io/certified-pre-owned-d95910965cd2
+  - https://github.com/ly4k/Certipy
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.credential_access
+  - attack.t1649
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_certutil_export:
+    Image|endswith: '\certutil.exe'
+    CommandLine|contains:
+      - '-exportPFX'
+      - '/exportPFX'
+      - '-backup'
+      - '/backup'
+      - '-p '
+  selection_certreq:
+    Image|endswith: '\certreq.exe'
+    CommandLine|contains:
+      - '-submit'
+      - '/submit'
+      - '-enroll'
+      - '-attrib'
+      - 'CertificateTemplate:'
+  selection_certutil_request:
+    Image|endswith: '\certutil.exe'
+    CommandLine|contains|all:
+      - '-config'
+      - '-ca.cert'
+  condition: selection_certutil_export or selection_certreq or selection_certutil_request
+falsepositives:
+  - Legitimate certificate enrollment by PKI administrators
+  - Automated certificate renewal processes
+level: high

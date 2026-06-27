@@ -1,0 +1,61 @@
+title: Authentication Coercion for Delegation Abuse (PrinterBug/PetitPotam)
+id: f7c3d9a1-1134-4de0-b8c7-unified-deleg03
+related:
+  - id: elastic-coercion-attack
+    type: derived
+  - id: splunk-printerbug-detection
+    type: derived
+status: experimental
+description: |
+  Detects authentication coercion techniques used in conjunction with unconstrained
+  delegation abuse. Attackers force a high-privilege machine (e.g., DC) to
+  authenticate to a compromised delegation host via PrinterBug (MS-RPRN),
+  PetitPotam (MS-EFSRPC), DFSCoerce, or ShadowCoerce.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1134/
+  - https://attack.mitre.org/techniques/T1558/
+  - https://github.com/topotam/PetitPotam
+  - https://github.com/leechristensen/SpoolSample
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.credential_access
+  - attack.privilege_escalation
+  - attack.t1134
+  - attack.t1558
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_coercion_tools:
+    CommandLine|contains:
+      - 'PetitPotam'
+      - 'petitpotam'
+      - 'SpoolSample'
+      - 'printerbug'
+      - 'PrinterBug'
+      - 'DFSCoerce'
+      - 'dfscoerce'
+      - 'ShadowCoerce'
+      - 'shadowcoerce'
+      - 'Coercer'
+      - 'coercer'
+  selection_ms_rprn:
+    CommandLine|contains|all:
+      - 'MS-RPRN'
+  selection_ms_efsrpc:
+    CommandLine|contains:
+      - 'EfsRpcOpenFileRaw'
+      - 'MS-EFSRPC'
+      - 'EfsRpcEncryptFileSrv'
+  condition: selection_coercion_tools or selection_ms_rprn or selection_ms_efsrpc
+falsepositives:
+  - Security assessment tools during authorized penetration testing
+level: critical

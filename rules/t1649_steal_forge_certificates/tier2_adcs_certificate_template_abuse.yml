@@ -1,0 +1,51 @@
+title: AD CS Certificate Template Abuse Indicators (ESC1-ESC8)
+id: f7c3d9a1-6493-4de0-b8c7-unified-t1649003
+related:
+  - id: elastic-adcs-esc-indicators
+    type: derived
+  - id: splunk-adcs-template-abuse
+    type: derived
+status: experimental
+description: |
+  Detects indicators of AD CS template abuse including suspicious certificate
+  enrollment with SAN (Subject Alternative Name), certificate template modification,
+  and PKINIT authentication anomalies. Covers ESC1 (SAN template abuse), ESC4
+  (template modification), ESC6/ESC8 (NTLM relay to ADCS).
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1649/
+  - https://posts.specterops.io/certified-pre-owned-d95910965cd2
+  - https://research.ifcr.dk/certifried-active-directory-domain-privilege-escalation-cve-2022-26923-9e098fe298f4
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.credential_access
+  - attack.t1649
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-source.azure-sentinel
+  - x-evasion-resistance.high
+  - x-drs.dq-coverage
+  - x-drs.ed-log-evasion-resistance
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_cert_request_4886:
+    EventID: 4886
+  selection_cert_issued_4887:
+    EventID: 4887
+  selection_template_modified_4899:
+    EventID: 4899
+  selection_template_loaded:
+    EventID: 4898
+  selection_san_abuse:
+    EventID: 4887
+    SubjectAlternativeName|contains:
+      - '@'
+      - '\\'
+  condition: selection_san_abuse or selection_template_modified_4899 or (selection_cert_request_4886 and selection_cert_issued_4887)
+falsepositives:
+  - Legitimate certificate enrollment with SAN for multi-domain servers
+  - PKI administrators modifying certificate templates
+level: high

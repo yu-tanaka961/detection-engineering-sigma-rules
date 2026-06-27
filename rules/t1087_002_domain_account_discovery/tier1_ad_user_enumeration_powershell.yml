@@ -1,0 +1,60 @@
+title: Domain Account Enumeration via PowerShell/LDAP
+id: f7c3d9a1-1087-4de0-b8c7-unified-t1087002
+related:
+  - id: sigmahq-powerview-user-enum
+    type: derived
+  - id: elastic-ad-user-discovery
+    type: derived
+status: experimental
+description: |
+  Detects domain account enumeration via PowerShell AD cmdlets (Get-ADUser,
+  Get-DomainUser), LDAP queries, and tools like ADFind and BloodHound.
+  Attackers use these to map domain accounts and identify privileged users.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1087/002/
+  - https://github.com/PowerShellMafia/PowerSploit
+  - https://github.com/BloodHoundAD/BloodHound
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.discovery
+  - attack.t1087.002
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_powershell_ad:
+    CommandLine|contains:
+      - 'Get-ADUser'
+      - 'Get-DomainUser'
+      - 'Get-NetUser'
+      - 'Get-ADGroupMember'
+      - 'Get-DomainGroupMember'
+      - 'Get-NetGroupMember'
+  selection_adfind_user:
+    CommandLine|contains:
+      - 'adfind'
+      - 'AdFind'
+    CommandLine|contains:
+      - 'objectcategory=person'
+      - 'objectclass=user'
+      - 'samaccountname'
+      - 'memberof'
+  selection_ldap_user:
+    CommandLine|contains:
+      - '(objectClass=user)'
+      - '(objectCategory=person)'
+      - 'samAccountName='
+      - '(adminCount=1)'
+  condition: selection_powershell_ad or selection_adfind_user or selection_ldap_user
+falsepositives:
+  - Legitimate AD administration scripts
+  - IT audit and compliance tools
+level: medium

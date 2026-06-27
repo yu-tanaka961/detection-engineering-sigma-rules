@@ -1,0 +1,59 @@
+title: Domain Trust Enumeration via PowerShell/ADFind
+id: f7c3d9a1-1482-4de0-b8c7-unified-t1482002
+related:
+  - id: sigmahq-powerview-trust-enum
+    type: derived
+  - id: elastic-ad-trust-discovery
+    type: derived
+status: experimental
+description: |
+  Detects domain trust enumeration via PowerShell AD cmdlets, PowerView,
+  ADFind, and LDAP queries targeting trust objects. Attackers map trust
+  relationships to find cross-domain attack paths.
+  Unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel detection logic.
+references:
+  - https://attack.mitre.org/techniques/T1482/
+  - https://github.com/PowerShellMafia/PowerSploit
+author: Yuhei Tanaka (unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+  - attack.discovery
+  - attack.t1482
+  - x-source.sigmahq
+  - x-source.elastic-detection-rules
+  - x-source.splunk-escu
+  - x-evasion-resistance.medium
+  - x-drs.dq-coverage
+  - x-drs.ed-tool-change-resistance
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_powershell_trust:
+    CommandLine|contains:
+      - 'Get-ADTrust'
+      - 'Get-DomainTrust'
+      - 'Get-NetDomainTrust'
+      - 'Get-ForestTrust'
+      - 'Get-NetForestTrust'
+      - 'Get-DomainForeignUser'
+      - 'Get-DomainForeignGroupMember'
+  selection_adfind_trust:
+    CommandLine|contains:
+      - 'adfind'
+      - 'AdFind'
+    CommandLine|contains:
+      - 'trustdmp'
+      - 'objectclass=trustedDomain'
+      - 'trustedDomain'
+  selection_ldap_trust:
+    CommandLine|contains:
+      - '(objectClass=trustedDomain)'
+      - 'CN=System'
+      - 'trustAttributes'
+      - 'trustDirection'
+  condition: selection_powershell_trust or selection_adfind_trust or selection_ldap_trust
+falsepositives:
+  - Legitimate AD administration scripts
+  - Domain migration planning tools
+level: medium
