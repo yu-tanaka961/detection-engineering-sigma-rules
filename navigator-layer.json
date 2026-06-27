@@ -1,0 +1,499 @@
+{
+  "name": "Detection Engineering - Sigma Rules Coverage",
+  "versions": {
+    "attack": "16",
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Cross-source unified Sigma rules coverage map. Rules unified from SigmaHQ, Elastic, Splunk ESCU, and Azure Sentinel. Generated: 2026-06-28.",
+  "filters": {
+    "platforms": ["Windows"]
+  },
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "aggregateFunction": "average",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false,
+  "selectVisibleTechniques": false,
+  "gradient": {
+    "colors": ["#ce232e", "#ce232e"],
+    "minValue": 1,
+    "maxValue": 6
+  },
+  "legendItems": [
+    {
+      "label": "Sigma Rules Deployed (Tier 1 + Tier 2)",
+      "color": "#ce232e"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "author",
+      "value": "Yuhei Tanaka"
+    },
+    {
+      "name": "generated",
+      "value": "2026-06-28"
+    },
+    {
+      "name": "total_rules",
+      "value": "164"
+    },
+    {
+      "name": "total_techniques",
+      "value": "56"
+    }
+  ],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#205b8f",
+  "techniques": [
+    {
+      "techniqueID": "T1190",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Web Server Suspicious Child Process, Webshell File Creation | Tier2: Known Exploit Indicators",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1190_exploit_public_facing/"}]
+    },
+    {
+      "techniqueID": "T1133",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: RDP Brute Force, RDP from Public IP | Tier2: VPN Suspicious Logon",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1133_external_remote_services/"}]
+    },
+    {
+      "techniqueID": "T1078",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Multiple Failed then Success, Dormant Account Logon | Tier2: Admin Logon Anomaly",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1078_valid_accounts/"}]
+    },
+    {
+      "techniqueID": "T1078.004",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Cloud Impossible Travel, MFA Fatigue | Tier2: Suspicious Service Principal",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1078_004_cloud_accounts/"}]
+    },
+    {
+      "techniqueID": "T1566.001",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Office Suspicious Child Process, Macro Execution Indicators | Tier2: Suspicious Attachment File Write",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1566_001_spearphishing_attachment/"}]
+    },
+    {
+      "techniqueID": "T1059.001",
+      "score": 6,
+      "color": "#ce232e",
+      "comment": "Tier1: Base64 Encoded, Suspicious Params, Download Execute | Tier2: Suspicious Parent, AMSI Bypass, Malicious Cmdlets ScriptBlock",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "6"}, {"name": "directory", "value": "rules/t1059_001_powershell/"}]
+    },
+    {
+      "techniqueID": "T1059.003",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Suspicious Execution Pattern, Suspicious Parent | Tier2: Obfuscation Techniques",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1059_003_windows_command_shell/"}]
+    },
+    {
+      "techniqueID": "T1204.002",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Execution from User Dir, ISO/IMG/VHD Mount | Tier2: LNK Suspicious Target",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1204_002_malicious_file/"}]
+    },
+    {
+      "techniqueID": "T1569.002",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Suspicious Service Installation, SC.exe Service Creation | Tier2: Unusual Child Process",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1569_002_service_execution/"}]
+    },
+    {
+      "techniqueID": "T1053.005",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: schtasks Suspicious Creation, Task Scheduler Event | Tier2: Remote Task Creation",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1053_005_scheduled_task/"}]
+    },
+    {
+      "techniqueID": "T1047",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: WMIC Suspicious Execution, WmiPrvSE Suspicious Child | Tier2: WMI Event Subscription",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1047_wmi/"}]
+    },
+    {
+      "techniqueID": "T1543.003",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Service Registry Modification, New Service Suspicious Location | Tier2: Service DLL Hijack",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1543_003_windows_service_persistence/"}]
+    },
+    {
+      "techniqueID": "T1547.001",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Run Key Modification, Startup Folder File Creation | Tier2: Run Key via Unusual Process",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1547_001_registry_run_keys/"}]
+    },
+    {
+      "techniqueID": "T1136.001",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Local Account Creation CLI, Account Event Log | Tier2: Hidden Account Creation",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1136_001_local_account/"}]
+    },
+    {
+      "techniqueID": "T1197",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: BITSAdmin Suspicious Usage, BITS Persistence Notify | Tier2: BITS Unusual Job Creation",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1197_bits_jobs/"}]
+    },
+    {
+      "techniqueID": "T1068",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Suspicious Token Elevation, Known Exploit Tool | Tier2: Vulnerable Driver Load (BYOVD)",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1068_exploitation_privilege_escalation/"}]
+    },
+    {
+      "techniqueID": "T1134",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Token Impersonation Tools, Token Privilege Adjustment | Tier2: Parent PID Spoofing",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1134_access_token_manipulation/"}]
+    },
+    {
+      "techniqueID": "T1546.011",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: sdbinst Shim Installation, Shim Registry Modification | Tier2: Suspicious SDB File Creation",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1546_011_application_shimming/"}]
+    },
+    {
+      "techniqueID": "T1070.004",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Suspicious File Deletion Tools, Event Log Cleared | Tier2: Timestomping",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1070_004_file_deletion/"}]
+    },
+    {
+      "techniqueID": "T1027",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Encoded Content, Double Extension/RTLO | Tier2: ScriptBlock Deobfuscation Indicators",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1027_obfuscated_files/"}]
+    },
+    {
+      "techniqueID": "T1218",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Mshta/Rundll32/Regsvr32, CMSTP/MSIExec/InstallUtil | Tier2: LOLBin Network Connection",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1218_system_binary_proxy_execution/"}]
+    },
+    {
+      "techniqueID": "T1218.011",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Rundll32 Suspicious Execution, Suspicious DLL Path | Tier2: Abnormal Parent/Network",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1218_011_rundll32/"}]
+    },
+    {
+      "techniqueID": "T1140",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Certutil Decode, PowerShell Decode Execute | Tier2: CHM/XSL Script Processing",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1140_deobfuscate_decode/"}]
+    },
+    {
+      "techniqueID": "T1562.001",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "T1685 (旧T1562.001) | Tier1: Security Tool Service Disabled, Defender Registry Tamper | Tier2: ETW/AMSI Tampering",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1685_disable_modify_tools/"}]
+    },
+    {
+      "techniqueID": "T1003.001",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: LSASS Memory Access, Credential Dumping Tool | Tier2: LSASS Dump File Creation",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1003_001_lsass_memory/"}]
+    },
+    {
+      "techniqueID": "T1003.002",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: SAM Registry Hive Export, SAM Dump Tool | Tier2: SAM File Copy from Disk",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1003_002_sam_database/"}]
+    },
+    {
+      "techniqueID": "T1003.003",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: ntdsutil Credential Dump, NTDS File Access | Tier2: NTDS Dump File Creation",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1003_003_ntds/"}]
+    },
+    {
+      "techniqueID": "T1003.006",
+      "score": 5,
+      "color": "#ce232e",
+      "comment": "Tier1: Replication Rights 4662, Tool Execution | Tier2: ScriptBlock DCSync, Network DRSUAPI, Permission Delegation 5136",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "5"}, {"name": "directory", "value": "rules/t1003_006_dcsync/"}]
+    },
+    {
+      "techniqueID": "T1558.001",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: KRBTGT Hash Extraction Tools, Golden Ticket Usage Anomaly | Tier2: Golden Ticket ScriptBlock",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1558_001_golden_ticket/"}]
+    },
+    {
+      "techniqueID": "T1558.003",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: TGS Request Anomaly, Kerberoasting Tool | Tier2: RC4 Encryption Downgrade",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1558_003_kerberoasting/"}]
+    },
+    {
+      "techniqueID": "T1555",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Browser Credential Access, Credential Manager Access | Tier2: DPAPI Master Key Access",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1555_credentials_from_password_stores/"}]
+    },
+    {
+      "techniqueID": "T1552.001",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Sensitive File Search, Unattend XML Access | Tier2: SSH Key/Config File Access",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1552_001_credentials_in_files/"}]
+    },
+    {
+      "techniqueID": "T1552.006",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: GPP Password Discovery, SYSVOL GPP File Access | Tier2: GPP cpassword Decryption",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1552_006_gpp_credentials/"}]
+    },
+    {
+      "techniqueID": "T1557.001",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Responder/Inveigh Tool, LLMNR/NBT-NS Config Change | Tier2: SMB/NTLM Relay Indicators",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1557_001_llmnr_nbtns_poisoning/"}]
+    },
+    {
+      "techniqueID": "T1649",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Certificate Export/Request, AD CS Abuse Tool | Tier2: Certificate Template Abuse (ESC1-8)",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1649_steal_forge_certificates/"}]
+    },
+    {
+      "techniqueID": "T1550.002",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: PtH Tool Execution, NTLM Logon Anomaly | Tier2: PtH Process Creation Anomaly",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1550_002_pass_the_hash/"}]
+    },
+    {
+      "techniqueID": "T1018",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Network Scanning Commands, AD Computer Enumeration | Tier2: Network Scanner Tool",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1018_remote_system_discovery/"}]
+    },
+    {
+      "techniqueID": "T1033",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: whoami/System Info, Environment Variable User Discovery | Tier2: Rapid Recon Sequence",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1033_system_owner_user_discovery/"}]
+    },
+    {
+      "techniqueID": "T1083",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Suspicious Directory Listing, Share/Network Drive Enumeration | Tier2: Sensitive File Discovery ScriptBlock",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1083_file_and_directory_discovery/"}]
+    },
+    {
+      "techniqueID": "T1087.001",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Local Account Enumeration Commands, PowerShell Enumeration | Tier2: Local Admin Targeted Enumeration",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1087_001_local_account_discovery/"}]
+    },
+    {
+      "techniqueID": "T1087.002",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Net Domain User Enumeration, AD User PowerShell | Tier2: Privileged Account Targeted Enumeration",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1087_002_domain_account_discovery/"}]
+    },
+    {
+      "techniqueID": "T1482",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Trust Enumeration Commands, Trust PowerShell/ADFind | Tier2: Cross-Domain Trust Abuse",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1482_domain_trust_discovery/"}]
+    },
+    {
+      "techniqueID": "T1021.001",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: RDP Suspicious Connection, RDP Session Hijacking | Tier2: RDP Registry/Firewall Modification",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1021_001_remote_desktop_protocol/"}]
+    },
+    {
+      "techniqueID": "T1021.002",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: PsExec/SMB Lateral Movement, Admin Share Access | Tier2: SMB Remote Service Install",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1021_002_smb_windows_admin_shares/"}]
+    },
+    {
+      "techniqueID": "T1570",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Lateral File Copy Commands, SMB Executable File Write | Tier2: WMI/WinRM File Transfer",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1570_lateral_tool_transfer/"}]
+    },
+    {
+      "techniqueID": "T1560",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Archive Tool Suspicious Execution, PowerShell Compress-Archive | Tier2: Large Archive in Staging Dir",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1560_archive_collected_data/"}]
+    },
+    {
+      "techniqueID": "T1071.001",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Suspicious HTTP C2 Patterns, Known C2 Framework Indicators | Tier2: LOLBin Outbound Connection",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1071_001_web_protocols/"}]
+    },
+    {
+      "techniqueID": "T1090",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Proxy Tool Execution, Web Shell Proxy Traffic | Tier2: Multi-Hop Proxy/Tor",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1090_proxy/"}]
+    },
+    {
+      "techniqueID": "T1105",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Remote File Download Tools, File Download from External IP | Tier2: Tool Transfer Network Connection",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1105_ingress_tool_transfer/"}]
+    },
+    {
+      "techniqueID": "T1219",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Remote Access Tool Execution, RAT Network Connection | Tier2: RAT Silent Install/Portable",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1219_remote_access_software/"}]
+    },
+    {
+      "techniqueID": "T1572",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: SSH Tunnel Suspicious Execution, DNS Tunnel Indicators | Tier2: Tunnel Network Connection Anomaly",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1572_protocol_tunneling/"}]
+    },
+    {
+      "techniqueID": "T1567.002",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Cloud Storage Upload Commands, Web Upload to Cloud | Tier2: Rclone Config/Renamed Execution",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1567_002_exfil_to_cloud_storage/"}]
+    },
+    {
+      "techniqueID": "T1486",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Ransomware File Extension Change, Encryption Tool Execution | Tier2: Ransomware Behavioral Indicators",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1486_data_encrypted_for_impact/"}]
+    },
+    {
+      "techniqueID": "T1490",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: VSS Shadow Copy Delete, BCDEdit/Recovery Disable | Tier2: Multiple Recovery Inhibition",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1490_inhibit_system_recovery/"}]
+    },
+    {
+      "techniqueID": "T1489",
+      "score": 3,
+      "color": "#ce232e",
+      "comment": "Tier1: Critical Service Stop Commands, PowerShell/WMI Service Stop | Tier2: Mass Service Stop Sequence",
+      "enabled": true,
+      "metadata": [{"name": "rules", "value": "3"}, {"name": "directory", "value": "rules/t1489_service_stop/"}]
+    }
+  ]
+}
