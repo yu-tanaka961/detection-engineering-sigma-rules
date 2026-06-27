@@ -1,0 +1,102 @@
+title: Suspicious Encoded or Compressed Content in Command Line
+id: f7c3d9a1-2001-4de0-b8c7-unified-t1027
+related:
+    - id: d0e1f2a3-4b5c-6d7e-8f9a-0b1c2d3e4f5a  # SigmaHQ obfuscation
+      type: derived
+status: test
+description: |
+    Detects command-line execution containing indicators of encoded or
+    compressed payloads such as Base64, Gzip streams, XOR operations, and
+    certutil encoding. These patterns are commonly used to obfuscate
+    malicious payloads delivered via command line.
+    Unified from:
+    - SigmaHQ proc_creation_win_susp_encoded_content.yml
+    - Elastic defense_evasion_obfuscated_content.toml
+    - Splunk ESCU (Obfuscated Command Line)
+    - Azure Sentinel (Encoded Command Detection)
+references:
+    - https://attack.mitre.org/techniques/T1027/
+    - https://attack.mitre.org/techniques/T1140/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.t1027
+    - attack.t1140
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # certutil encoding/decoding
+    selection_certutil:
+        Image|endswith: '\certutil.exe'
+        CommandLine|contains:
+            - '-encode'
+            - '-decode'
+            - '-urlcache'
+            - '-decodehex'
+            - '/encode'
+            - '/decode'
+            - '/urlcache'
+
+    # Base64 in command line (long encoded strings)
+    selection_base64_indicators:
+        CommandLine|contains:
+            - 'FromBase64String'
+            - 'ToBase64String'
+            - '[Convert]::FromBase64'
+            - '[System.Convert]::FromBase64'
+            - 'base64 -d'
+            - '-EncodedCommand'
+            - '-enc '
+
+    # Gzip/Deflate decompression
+    selection_compression:
+        CommandLine|contains:
+            - 'IO.Compression.GzipStream'
+            - 'IO.Compression.DeflateStream'
+            - 'IO.MemoryStream'
+            - 'Decompress'
+            - 'GZipStream'
+
+    # XOR and byte manipulation
+    selection_xor:
+        CommandLine|contains:
+            - '-bxor'
+            - 'xor'
+            - '[byte[]]'
+            - 'IO.StreamReader'
+            - 'Net.WebClient'
+
+    # Multiple concatenation (string obfuscation)
+    selection_concat:
+        CommandLine|contains:
+            - "'+'"
+            - "' + '"
+            - '$env:'
+            - '-join'
+            - '-replace'
+            - '.Replace('
+            - 'char]'
+            - '[char]'
+
+    # Long command lines (potential encoded payload)
+    selection_long_cmdline:
+        CommandLine|re: '.{500,}'
+        Image|endswith:
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\cmd.exe'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Legitimate encoded configuration deployment
+    - Software installation scripts using Base64 encoding
+    - Developer tools using encoded parameters
+level: medium

@@ -1,0 +1,70 @@
+title: Suspicious SDB File Creation in Non-Standard Location
+id: f7c3d9a1-1803-4de0-b8c7-unified-t1546011
+related:
+    - id: f6a7b8c9-0d1e-2f3a-4b5c-6d7e8f9a0b1c  # Elastic SDB file creation
+      type: derived
+status: test
+description: |
+    Detects creation of .sdb (shim database) files outside the standard
+    Windows AppPatch directory, or creation by unusual processes. Legitimate
+    SDB files are typically stored in C:\Windows\AppPatch\Custom\ and created
+    by sdbinst.exe. SDB files in user-writable locations or created by
+    scripting engines indicate potential malicious shimming.
+    Unified from:
+    - Elastic persistence_sdb_file_creation.toml
+    - SigmaHQ sysmon_file_creation_sdb_file.yml
+    - Splunk ESCU (Suspicious SDB File)
+references:
+    - https://attack.mitre.org/techniques/T1546/011/
+    - https://www.fireeye.com/blog/threat-research/2017/05/fin7-shim-databases-persistence.html
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.persistence
+    - attack.privilege_escalation
+    - attack.t1546.011
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-filecreate-11
+logsource:
+    category: file_event
+    product: windows
+detection:
+    selection_sdb_file:
+        TargetFilename|endswith: '.sdb'
+
+    # SDB in user-writable or temp directories
+    selection_suspicious_path:
+        TargetFilename|contains:
+            - '\Users\'
+            - '\Temp\'
+            - '\AppData\'
+            - '\Downloads\'
+            - '\Desktop\'
+            - '\ProgramData\'
+
+    # SDB created by unusual process
+    selection_unusual_creator:
+        Image|endswith:
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\cmd.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\mshta.exe'
+            - '\certutil.exe'
+            - '\bitsadmin.exe'
+
+    # Filter: legitimate shim installation
+    filter_legit_path:
+        TargetFilename|startswith: 'C:\Windows\AppPatch\'
+        Image|endswith: '\sdbinst.exe'
+
+    condition: selection_sdb_file and (selection_suspicious_path or selection_unusual_creator) and not filter_legit_path
+falsepositives:
+    - Custom application compatibility tools creating SDB files
+    - Software packaging tools
+level: high

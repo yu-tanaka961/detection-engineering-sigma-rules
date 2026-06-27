@@ -1,0 +1,80 @@
+title: Access Token Manipulation via Known Tools
+id: f7c3d9a1-1701-4de0-b8c7-unified-t1134
+related:
+    - id: a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d  # SigmaHQ token manipulation
+      type: derived
+status: test
+description: |
+    Detects usage of known tools and techniques for access token manipulation,
+    including token stealing, impersonation, and privilege escalation via
+    token duplication. Covers tools like Incognito, Mimikatz token module,
+    and Cobalt Strike token commands.
+    Unified from:
+    - SigmaHQ proc_creation_win_hktl_token_manipulation.yml
+    - Elastic privilege_escalation_token_manipulation.toml
+    - Splunk ESCU (Access Token Manipulation)
+    - Azure Sentinel (Token Manipulation Detection)
+references:
+    - https://attack.mitre.org/techniques/T1134/
+    - https://attack.mitre.org/techniques/T1134/001/
+    - https://attack.mitre.org/techniques/T1134/002/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.privilege_escalation
+    - attack.defense_evasion
+    - attack.t1134
+    - attack.t1134.001
+    - attack.t1134.002
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_incognito:
+        CommandLine|contains:
+            - 'incognito'
+            - 'list_tokens'
+            - 'impersonate_token'
+            - 'steal_token'
+            - 'make_token'
+
+    selection_mimikatz_token:
+        CommandLine|contains:
+            - 'token::elevate'
+            - 'token::duplicate'
+            - 'token::impersonate'
+            - 'token::list'
+            - 'privilege::debug'
+
+    selection_runas_netonly:
+        Image|endswith: '\runas.exe'
+        CommandLine|contains: '/netonly'
+
+    selection_tool_names:
+        Image|endswith:
+            - '\incognito.exe'
+            - '\TokenPlayer.exe'
+            - '\SharpToken.exe'
+
+    selection_powershell_token:
+        CommandLine|contains:
+            - 'Invoke-TokenManipulation'
+            - 'Get-System'
+            - 'NtImpersonateThread'
+            - 'ImpersonateLoggedOnUser'
+            - 'DuplicateTokenEx'
+            - 'SetThreadToken'
+            - 'CreateProcessWithToken'
+            - 'CreateProcessAsUser'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Authorized penetration testing
+    - Administrative use of runas /netonly for cross-domain authentication
+level: high

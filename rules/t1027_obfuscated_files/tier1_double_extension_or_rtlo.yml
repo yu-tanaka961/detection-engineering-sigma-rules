@@ -1,0 +1,75 @@
+title: File with Double Extension or Right-to-Left Override Character
+id: f7c3d9a1-2002-4de0-b8c7-unified-t1027
+related:
+    - id: e1f2a3b4-5c6d-7e8f-9a0b-1c2d3e4f5a6b  # Elastic double extension
+      type: derived
+status: test
+description: |
+    Detects execution of files with double extensions (e.g., report.pdf.exe)
+    or files containing Right-to-Left Override (RTLO) Unicode characters
+    that reverse the display of file extensions to disguise executables as
+    documents. This is a common social engineering technique.
+    Unified from:
+    - Elastic defense_evasion_double_extension.toml
+    - SigmaHQ proc_creation_win_double_extension.yml
+    - Splunk ESCU (Double Extension File)
+    - Azure Sentinel (RTLO Character in Filename)
+references:
+    - https://attack.mitre.org/techniques/T1027/
+    - https://attack.mitre.org/techniques/T1036/007/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.t1027
+    - attack.t1036.007
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # Double extension: document extension followed by executable extension
+    selection_double_ext:
+        Image|endswith:
+            - '.pdf.exe'
+            - '.doc.exe'
+            - '.docx.exe'
+            - '.xls.exe'
+            - '.xlsx.exe'
+            - '.ppt.exe'
+            - '.pptx.exe'
+            - '.txt.exe'
+            - '.jpg.exe'
+            - '.png.exe'
+            - '.pdf.scr'
+            - '.doc.scr'
+            - '.jpg.scr'
+            - '.pdf.bat'
+            - '.doc.bat'
+            - '.pdf.cmd'
+            - '.doc.cmd'
+            - '.pdf.com'
+            - '.doc.com'
+            - '.pdf.pif'
+            - '.doc.pif'
+
+    # RTLO character in filename (Unicode U+202E)
+    selection_rtlo:
+        Image|contains: "‮"
+
+    # Space padding before real extension
+    selection_space_padding:
+        Image|contains:
+            - '          .exe'
+            - '          .scr'
+            - '          .bat'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Very rare. Double extensions in legitimate software are uncommon.
+level: critical

@@ -1,0 +1,95 @@
+title: Suspicious File Deletion via Command-Line Tools
+id: f7c3d9a1-1901-4de0-b8c7-unified-t1070004
+related:
+    - id: a7b8c9d0-1e2f-3a4b-5c6d-7e8f9a0b1c2d  # SigmaHQ file deletion
+      type: derived
+status: test
+description: |
+    Detects suspicious use of file deletion commands targeting security-relevant
+    files such as event logs, prefetch, USN journal, shadow copies, and
+    forensic artifacts. Adversaries delete these files to remove evidence
+    of their activity.
+    Unified from:
+    - SigmaHQ proc_creation_win_susp_file_deletion.yml
+    - Elastic defense_evasion_file_deletion.toml
+    - Splunk ESCU (Suspicious File Deletion)
+    - Azure Sentinel (Evidence Tampering)
+references:
+    - https://attack.mitre.org/techniques/T1070/004/
+    - https://attack.mitre.org/techniques/T1070/001/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.t1070.004
+    - attack.t1070.001
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # Shadow copy deletion
+    selection_shadow_copy:
+        CommandLine|contains:
+            - 'vssadmin delete shadows'
+            - 'vssadmin.exe delete shadows'
+            - 'wmic shadowcopy delete'
+
+    # Event log clearing via wevtutil
+    selection_eventlog_clear:
+        CommandLine|contains:
+            - 'wevtutil cl'
+            - 'wevtutil clear-log'
+            - 'Clear-EventLog'
+            - 'Remove-EventLog'
+
+    # USN journal deletion
+    selection_usn_delete:
+        CommandLine|contains:
+            - 'fsutil usn deletejournal'
+
+    # Prefetch deletion
+    selection_prefetch:
+        CommandLine|contains:
+            - 'del /f'
+            - 'Remove-Item'
+            - 'rm -Force'
+        CommandLine|contains:
+            - '\Prefetch\'
+            - '.pf'
+
+    # Secure delete tools
+    selection_secure_delete:
+        Image|endswith:
+            - '\sdelete.exe'
+            - '\sdelete64.exe'
+            - '\cipher.exe'
+        CommandLine|contains:
+            - '/w:'
+            - '-p '
+            - '-s '
+
+    # Bulk deletion patterns
+    selection_bulk_delete:
+        CommandLine|contains:
+            - 'del /s /q /f'
+            - 'rd /s /q'
+            - 'rmdir /s /q'
+        CommandLine|contains:
+            - '\Windows\System32\winevt'
+            - '\Windows\Prefetch'
+            - '\Windows\Logs'
+            - '\Windows\Temp'
+            - '$Recycle.Bin'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Legitimate disk cleanup scripts
+    - Windows Disk Cleanup utility
+    - Authorized log rotation procedures
+level: high

@@ -1,0 +1,80 @@
+title: File Timestamp Modification (Timestomping)
+id: f7c3d9a1-1903-4de0-b8c7-unified-t1070004
+related:
+    - id: c9d0e1f2-3a4b-5c6d-7e8f-9a0b1c2d3e4f  # Elastic timestomp
+      type: derived
+status: test
+description: |
+    Detects file timestamp modification (timestomping) where creation time
+    is set to a value before the modification time, or well-known timestomping
+    tools are used. Adversaries modify file timestamps to blend malicious
+    files with legitimate system files. Sysmon EventID 2 (FileCreateTime
+    changed) captures these modifications.
+    Unified from:
+    - Elastic defense_evasion_timestomp.toml
+    - SigmaHQ sysmon_file_time_changed.yml
+    - Splunk ESCU (File Timestomping)
+references:
+    - https://attack.mitre.org/techniques/T1070/006/
+    - https://attack.mitre.org/techniques/T1070/004/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.t1070.006
+    - attack.t1070.004
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-filecreatetimechanged-2
+logsource:
+    category: file_change
+    product: windows
+detection:
+    # File creation time changed event
+    selection_time_change:
+        EventID: 2
+
+    # Suspicious processes modifying timestamps
+    selection_suspicious_process:
+        Image|endswith:
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\cmd.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\mshta.exe'
+            - '\rundll32.exe'
+
+    # Target files in system directories (blending with OS files)
+    selection_system_target:
+        TargetFilename|startswith:
+            - 'C:\Windows\System32\'
+            - 'C:\Windows\SysWOW64\'
+            - 'C:\Windows\Temp\'
+
+    # Target is executable or DLL
+    selection_executable_target:
+        TargetFilename|endswith:
+            - '.exe'
+            - '.dll'
+            - '.sys'
+            - '.bat'
+            - '.ps1'
+            - '.vbs'
+
+    # Filter: legitimate software
+    filter_windows_update:
+        Image|startswith:
+            - 'C:\Windows\servicing\'
+            - 'C:\Windows\WinSxS\'
+            - 'C:\Windows\Installer\'
+
+    condition: selection_time_change and selection_suspicious_process and (selection_system_target or selection_executable_target) and not filter_windows_update
+falsepositives:
+    - Software installation modifying file timestamps
+    - Windows Update changing file creation times
+    - Backup restoration tools
+level: high

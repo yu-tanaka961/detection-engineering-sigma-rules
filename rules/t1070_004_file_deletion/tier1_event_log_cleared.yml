@@ -1,0 +1,46 @@
+title: Windows Event Log Cleared
+id: f7c3d9a1-1902-4de0-b8c7-unified-t1070004
+related:
+    - id: b8c9d0e1-2f3a-4b5c-6d7e-8f9a0b1c2d3e  # SigmaHQ event log cleared
+      type: derived
+status: test
+description: |
+    Detects clearing of Windows Event Logs via EventID 1102 (Security log
+    cleared) and EventID 104 (System log cleared). These events are generated
+    by the Event Log service itself and are extremely difficult to suppress
+    without kernel-level access. This is a high-fidelity indicator of
+    evidence destruction.
+    Unified from:
+    - SigmaHQ win_security_event_log_cleared.yml
+    - Elastic defense_evasion_event_log_cleared.toml
+    - Splunk ESCU (Event Log Cleared)
+    - Azure Sentinel (Security Event Log Cleared)
+references:
+    - https://attack.mitre.org/techniques/T1070/001/
+    - https://attack.mitre.org/techniques/T1070/004/
+    - https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-1102
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.t1070.001
+    - attack.t1070.004
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-security-1102
+logsource:
+    product: windows
+    service: security
+detection:
+    selection_security_cleared:
+        EventID: 1102
+
+    condition: selection_security_cleared
+falsepositives:
+    - Authorized log maintenance during compliance procedures
+    - Domain controller log rotation (rare and should be documented)
+level: critical

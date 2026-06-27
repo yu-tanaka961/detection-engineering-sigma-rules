@@ -1,0 +1,60 @@
+title: Shim Database Registry Key Modification
+id: f7c3d9a1-1802-4de0-b8c7-unified-t1546011
+related:
+    - id: e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b  # Elastic shim registry
+      type: derived
+status: test
+description: |
+    Detects modifications to the AppCompatFlags registry keys which store
+    shim database configurations. Adversaries may directly modify these
+    registry keys to install custom shim databases without using sdbinst.exe,
+    bypassing process-level detection. Sysmon EventID 13 captures these
+    registry value changes.
+    Unified from:
+    - Elastic persistence_shim_database_registry.toml
+    - SigmaHQ sysmon_registry_shim_database.yml
+    - Splunk ESCU (Shim Database Registry Modification)
+references:
+    - https://attack.mitre.org/techniques/T1546/011/
+    - https://www.mandiant.com/resources/blog/fin7-shim-databases-persistence
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.persistence
+    - attack.privilege_escalation
+    - attack.t1546.011
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-registry-13
+logsource:
+    category: registry_set
+    product: windows
+detection:
+    selection_shim_registry:
+        TargetObject|contains:
+            - '\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\InstalledSDB'
+            - '\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Custom'
+
+    selection_shim_layers:
+        TargetObject|contains: '\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers'
+        Details|contains:
+            - 'SHIMENG'
+            - 'REDIRECT'
+            - 'INJECT'
+
+    # Direct SDB file reference in registry
+    selection_sdb_reference:
+        TargetObject|contains: '\AppCompatFlags'
+        Details|endswith: '.sdb'
+
+    filter_sdbinst:
+        Image|endswith: '\sdbinst.exe'
+
+    condition: (selection_shim_registry or selection_shim_layers or selection_sdb_reference) and not filter_sdbinst
+falsepositives:
+    - Application compatibility tools modifying shim registry keys
+    - Windows Update applying compatibility fixes
+level: high

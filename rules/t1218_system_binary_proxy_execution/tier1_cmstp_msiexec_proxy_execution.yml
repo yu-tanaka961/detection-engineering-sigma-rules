@@ -1,0 +1,98 @@
+title: CMSTP/MSIExec/InstallUtil Proxy Execution
+id: f7c3d9a1-2102-4de0-b8c7-unified-t1218
+related:
+    - id: b4c5d6e7-8f9a-0b1c-2d3e-4f5a6b7c8d9e  # Elastic proxy execution
+      type: derived
+status: test
+description: |
+    Detects suspicious use of CMSTP.exe, msiexec.exe, and InstallUtil.exe
+    for proxy execution. CMSTP can bypass UAC and execute arbitrary commands
+    via INF files. MSIExec can install remote packages or execute DLLs.
+    InstallUtil can bypass application whitelisting by loading .NET assemblies.
+    Unified from:
+    - SigmaHQ proc_creation_win_cmstp.yml, proc_creation_win_msiexec_susp.yml
+    - Elastic defense_evasion_cmstp.toml, defense_evasion_msiexec.toml
+    - Splunk ESCU (CMSTP UAC Bypass, MSIExec Proxy Execution)
+references:
+    - https://attack.mitre.org/techniques/T1218/003/
+    - https://attack.mitre.org/techniques/T1218/007/
+    - https://attack.mitre.org/techniques/T1218/004/
+    - https://lolbas-project.github.io/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.t1218
+    - attack.t1218.003
+    - attack.t1218.004
+    - attack.t1218.007
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # CMSTP execution with INF file
+    selection_cmstp:
+        Image|endswith: '\cmstp.exe'
+        CommandLine|contains:
+            - '/ni'
+            - '/s'
+            - '.inf'
+
+    # CMSTP from suspicious location
+    selection_cmstp_path:
+        Image|endswith: '\cmstp.exe'
+        CommandLine|contains:
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\Downloads\'
+
+    # msiexec remote package installation
+    selection_msiexec_remote:
+        Image|endswith: '\msiexec.exe'
+        CommandLine|contains:
+            - 'http://'
+            - 'https://'
+            - 'ftp://'
+
+    # msiexec quiet mode with suspicious path
+    selection_msiexec_quiet:
+        Image|endswith: '\msiexec.exe'
+        CommandLine|contains:
+            - '/q'
+            - '-q'
+        CommandLine|contains:
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\Downloads\'
+            - '\\\\' # UNC path
+
+    # msiexec DLL execution
+    selection_msiexec_dll:
+        Image|endswith: '\msiexec.exe'
+        CommandLine|contains:
+            - '/y '
+            - '/z '
+
+    # InstallUtil .NET assembly execution
+    selection_installutil:
+        Image|endswith: '\InstallUtil.exe'
+        CommandLine|contains:
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\Downloads\'
+            - '\Desktop\'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Legitimate VPN profile installation via CMSTP
+    - Enterprise software deployment via msiexec
+    - .NET application installation via InstallUtil
+level: high

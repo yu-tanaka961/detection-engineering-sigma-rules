@@ -1,0 +1,84 @@
+title: LOLBin Making Unusual Outbound Network Connection
+id: f7c3d9a1-2103-4de0-b8c7-unified-t1218
+related:
+    - id: c5d6e7f8-9a0b-1c2d-3e4f-5a6b7c8d9e0f  # Elastic LOLBin network
+      type: derived
+status: test
+description: |
+    Detects signed Microsoft system binaries (LOLBins) establishing outbound
+    network connections. While these binaries are trusted for local operations,
+    network activity from them often indicates proxy execution of malicious
+    downloads or C2 communication. Sysmon EventID 3 captures network
+    connections with process details.
+    Unified from:
+    - Elastic defense_evasion_lolbin_network.toml
+    - SigmaHQ sysmon_network_lolbin.yml
+    - Splunk ESCU (LOLBin Network Connection)
+references:
+    - https://attack.mitre.org/techniques/T1218/
+    - https://lolbas-project.github.io/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.execution
+    - attack.t1218
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-network-3
+logsource:
+    category: network_connection
+    product: windows
+detection:
+    selection_lolbins:
+        Image|endswith:
+            - '\mshta.exe'
+            - '\regsvr32.exe'
+            - '\rundll32.exe'
+            - '\cmstp.exe'
+            - '\certutil.exe'
+            - '\csc.exe'
+            - '\msbuild.exe'
+            - '\installutil.exe'
+            - '\xwizard.exe'
+            - '\presentationhost.exe'
+            - '\wmic.exe'
+            - '\hh.exe'
+            - '\ieexec.exe'
+
+    selection_outbound:
+        Initiated: 'true'
+
+    # External IP (not RFC1918)
+    filter_local_network:
+        DestinationIp|startswith:
+            - '10.'
+            - '172.16.'
+            - '172.17.'
+            - '172.18.'
+            - '172.19.'
+            - '172.20.'
+            - '172.21.'
+            - '172.22.'
+            - '172.23.'
+            - '172.24.'
+            - '172.25.'
+            - '172.26.'
+            - '172.27.'
+            - '172.28.'
+            - '172.29.'
+            - '172.30.'
+            - '172.31.'
+            - '192.168.'
+            - '127.'
+            - '::1'
+
+    condition: selection_lolbins and selection_outbound and not filter_local_network
+falsepositives:
+    - Legitimate use of certutil for certificate validation
+    - mshta loading legitimate HTA applications from intranet
+    - MSBuild downloading NuGet packages
+level: high

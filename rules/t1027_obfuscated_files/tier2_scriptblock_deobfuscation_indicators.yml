@@ -1,0 +1,89 @@
+title: PowerShell ScriptBlock Deobfuscation Indicators
+id: f7c3d9a1-2003-4de0-b8c7-unified-t1027
+related:
+    - id: f2a3b4c5-6d7e-8f9a-0b1c-2d3e4f5a6b7c  # SigmaHQ scriptblock obfuscation
+      type: derived
+status: test
+description: |
+    Detects obfuscation indicators in PowerShell ScriptBlock Logging (EventID
+    4104). ScriptBlock Logging captures the deobfuscated version of scripts,
+    making it highly effective against encoded and obfuscated payloads.
+    This rule targets patterns like Invoke-Expression with encoded strings,
+    character array construction, and string reversal techniques.
+    Unified from:
+    - SigmaHQ posh_ps_susp_obfuscation.yml
+    - Elastic defense_evasion_posh_obfuscation.toml
+    - Splunk ESCU (PowerShell Obfuscation)
+references:
+    - https://attack.mitre.org/techniques/T1027/
+    - https://attack.mitre.org/techniques/T1059/001/
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.execution
+    - attack.t1027
+    - attack.t1059.001
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.powershell-scriptblock-4104
+logsource:
+    product: windows
+    category: ps_script
+    definition: 'PowerShell ScriptBlock Logging (EventID 4104) must be enabled'
+detection:
+    # Character array to string conversion
+    selection_char_array:
+        ScriptBlockText|contains:
+            - '[char[]]'
+            - '[char]0x'
+            - '[char]('
+            - '-join [char]'
+            - '[System.Text.Encoding]'
+
+    # String reversal
+    selection_reverse:
+        ScriptBlockText|contains:
+            - "[-1..-"
+            - ".Reverse()"
+            - "[Array]::Reverse"
+            - "-join ''"
+
+    # Dynamic invocation
+    selection_dynamic_invoke:
+        ScriptBlockText|contains:
+            - '.Invoke('
+            - 'Invoke-Expression'
+            - 'iex('
+            - 'iex '
+            - '| iex'
+            - "| &('iex')"
+            - '.InvokeReturnAsIs('
+
+    # Environment variable concatenation
+    selection_env_concat:
+        ScriptBlockText|contains:
+            - '$env:ComSpec'
+            - '$env:TEMP'
+            - '$env:PUBLIC'
+            - "$ShellId"
+
+    # Tick/backtick obfuscation (e.g., `I`n`v`o`k`e)
+    selection_tick_obfuscation:
+        ScriptBlockText|re: '`[a-zA-Z]`[a-zA-Z]`[a-zA-Z]'
+
+    # String format operator abuse
+    selection_format_operator:
+        ScriptBlockText|contains:
+            - "'{0}{1}' -f"
+            - "'{1}{0}' -f"
+            - "'{0}{1}{2}' -f"
+
+    condition: 1 of selection_*
+falsepositives:
+    - Legitimate scripts using string formatting
+    - Obfuscation testing tools during security assessments
+level: high

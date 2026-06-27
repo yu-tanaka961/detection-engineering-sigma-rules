@@ -1,0 +1,69 @@
+title: Suspicious Process Token Privilege Adjustment
+id: f7c3d9a1-1702-4de0-b8c7-unified-t1134
+related:
+    - id: b2c3d4e5-6f7a-8b9c-0d1e-2f3a4b5c6d7e  # Elastic token privilege
+      type: derived
+status: test
+description: |
+    Detects processes that adjust token privileges to gain SeDebugPrivilege,
+    SeImpersonatePrivilege, or SeAssignPrimaryTokenPrivilege. These privileges
+    are commonly abused for token manipulation attacks. EventID 4703 logs
+    token privilege adjustments when "Audit Token Right Adjusted" is enabled.
+    Unified from:
+    - Elastic privilege_escalation_token_rights_adjusted.toml
+    - SigmaHQ win_security_token_privilege_adjusted.yml
+    - Splunk ESCU (Token Privilege Adjustment)
+    - Azure Sentinel (Suspicious Token Privilege)
+references:
+    - https://attack.mitre.org/techniques/T1134/
+    - https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4703
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.privilege_escalation
+    - attack.defense_evasion
+    - attack.t1134
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.windows-security-4703
+logsource:
+    product: windows
+    service: security
+detection:
+    selection_event:
+        EventID: 4703
+
+    selection_privileges:
+        EnabledPrivilegeList|contains:
+            - 'SeDebugPrivilege'
+            - 'SeImpersonatePrivilege'
+            - 'SeAssignPrimaryTokenPrivilege'
+            - 'SeTcbPrivilege'
+            - 'SeLoadDriverPrivilege'
+
+    filter_system_processes:
+        ProcessName|startswith:
+            - 'C:\Windows\System32\'
+            - 'C:\Windows\SysWOW64\'
+            - 'C:\Program Files\'
+            - 'C:\Program Files (x86)\'
+
+    filter_known_legit:
+        ProcessName|endswith:
+            - '\svchost.exe'
+            - '\services.exe'
+            - '\lsass.exe'
+            - '\csrss.exe'
+            - '\wininit.exe'
+            - '\MsMpEng.exe'
+
+    condition: selection_event and selection_privileges and not (filter_system_processes and filter_known_legit)
+falsepositives:
+    - Security tools requiring debug privileges
+    - Legitimate administrative tools adjusting token privileges
+    - Visual Studio debugger
+level: high

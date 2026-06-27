@@ -76,10 +76,30 @@ detection-engineering-sigma-rules/
 │   │   ├── tier1_bitsadmin_suspicious_usage.yml
 │   │   ├── tier1_bits_persistence_via_notify.yml
 │   │   └── tier2_bits_unusual_job_creation.yml
-│   └── t1068_exploitation_privilege_escalation/ # MITRE ATT&CK T1068
-│       ├── tier1_suspicious_process_token_elevation.yml
-│       ├── tier1_known_exploit_tool_execution.yml
-│       └── tier2_vulnerable_driver_load.yml
+│   ├── t1068_exploitation_privilege_escalation/ # MITRE ATT&CK T1068
+│   │   ├── tier1_suspicious_process_token_elevation.yml
+│   │   ├── tier1_known_exploit_tool_execution.yml
+│   │   └── tier2_vulnerable_driver_load.yml
+│   ├── t1134_access_token_manipulation/ # MITRE ATT&CK T1134
+│   │   ├── tier1_token_impersonation_tools.yml
+│   │   ├── tier1_suspicious_process_token_change.yml
+│   │   └── tier2_parent_pid_spoofing.yml
+│   ├── t1546_011_application_shimming/ # MITRE ATT&CK T1546.011
+│   │   ├── tier1_sdbinst_shim_installation.yml
+│   │   ├── tier1_shim_database_registry_modification.yml
+│   │   └── tier2_sdb_file_creation_suspicious.yml
+│   ├── t1070_004_file_deletion/       # MITRE ATT&CK T1070.004
+│   │   ├── tier1_suspicious_file_deletion_tools.yml
+│   │   ├── tier1_event_log_cleared.yml
+│   │   └── tier2_timestomp_file_time_modification.yml
+│   ├── t1027_obfuscated_files/        # MITRE ATT&CK T1027
+│   │   ├── tier1_suspicious_encoded_content.yml
+│   │   ├── tier1_double_extension_or_rtlo.yml
+│   │   └── tier2_scriptblock_deobfuscation_indicators.yml
+│   └── t1218_system_binary_proxy_execution/ # MITRE ATT&CK T1218
+│       ├── tier1_mshta_suspicious_execution.yml
+│       ├── tier1_cmstp_msiexec_proxy_execution.yml
+│       └── tier2_lolbin_unusual_network_connection.yml
 └── docs/
     ├── t1059_001_cross_source_analysis.md
     ├── t1003_006_cross_source_analysis.md
@@ -97,7 +117,12 @@ detection-engineering-sigma-rules/
     ├── t1547_001_cross_source_analysis.md
     ├── t1136_001_cross_source_analysis.md
     ├── t1197_cross_source_analysis.md
-    └── t1068_cross_source_analysis.md
+    ├── t1068_cross_source_analysis.md
+    ├── t1134_cross_source_analysis.md
+    ├── t1546_011_cross_source_analysis.md
+    ├── t1070_004_cross_source_analysis.md
+    ├── t1027_cross_source_analysis.md
+    └── t1218_cross_source_analysis.md
 ```
 
 ## Rule Sets
@@ -277,6 +302,56 @@ detection-engineering-sigma-rules/
 | [Known Exploit Tool Execution](rules/t1068_exploitation_privilege_escalation/tier1_known_exploit_tool_execution.yml) | 1 | Critical | process_creation | Medium |
 | [Vulnerable Driver Load (BYOVD)](rules/t1068_exploitation_privilege_escalation/tier2_vulnerable_driver_load.yml) | 2 | Critical | sysmon (6) | High |
 
+### T1134 — Access Token Manipulation
+
+3 unified Sigma rules detecting token manipulation via known tools, privilege adjustment events, and Parent PID spoofing.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Token Impersonation Tools](rules/t1134_access_token_manipulation/tier1_token_impersonation_tools.yml) | 1 | High | process_creation | Medium |
+| [Token Privilege Adjustment (4703)](rules/t1134_access_token_manipulation/tier1_suspicious_process_token_change.yml) | 1 | High | security (4703) | High |
+| [Parent PID Spoofing](rules/t1134_access_token_manipulation/tier2_parent_pid_spoofing.yml) | 2 | Critical | process_creation | High |
+
+### T1546.011 — Application Shimming
+
+3 unified Sigma rules detecting persistence via application compatibility shim databases.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [sdbinst Shim Installation](rules/t1546_011_application_shimming/tier1_sdbinst_shim_installation.yml) | 1 | High | process_creation | Medium |
+| [Shim Registry Modification](rules/t1546_011_application_shimming/tier1_shim_database_registry_modification.yml) | 1 | High | sysmon (13) | High |
+| [Suspicious SDB File Creation](rules/t1546_011_application_shimming/tier2_sdb_file_creation_suspicious.yml) | 2 | High | sysmon (11) | High |
+
+### T1070.004 — Indicator Removal: File Deletion
+
+3 unified Sigma rules detecting evidence destruction via file deletion, event log clearing, and timestomping.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Suspicious File Deletion Tools](rules/t1070_004_file_deletion/tier1_suspicious_file_deletion_tools.yml) | 1 | High | process_creation | Medium |
+| [Event Log Cleared (1102)](rules/t1070_004_file_deletion/tier1_event_log_cleared.yml) | 1 | Critical | security (1102) | High |
+| [Timestomping](rules/t1070_004_file_deletion/tier2_timestomp_file_time_modification.yml) | 2 | High | sysmon (2) | High |
+
+### T1027 — Obfuscated Files or Information
+
+3 unified Sigma rules detecting payload obfuscation via encoding, file extension spoofing, and PowerShell deobfuscation.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Encoded/Compressed Content](rules/t1027_obfuscated_files/tier1_suspicious_encoded_content.yml) | 1 | Medium | process_creation | Medium |
+| [Double Extension / RTLO](rules/t1027_obfuscated_files/tier1_double_extension_or_rtlo.yml) | 1 | Critical | process_creation | High |
+| [ScriptBlock Deobfuscation Indicators](rules/t1027_obfuscated_files/tier2_scriptblock_deobfuscation_indicators.yml) | 2 | High | ps_script (4104) | High |
+
+### T1218 — System Binary Proxy Execution
+
+3 unified Sigma rules detecting LOLBin abuse for proxy execution via mshta, rundll32, regsvr32, CMSTP, msiexec, and network connections.
+
+| Rule | Tier | Level | Log Source | Evasion Resistance |
+|---|---|---|---|---|
+| [Mshta/Rundll32/Regsvr32 Proxy](rules/t1218_system_binary_proxy_execution/tier1_mshta_suspicious_execution.yml) | 1 | High | process_creation | Medium |
+| [CMSTP/MSIExec/InstallUtil Proxy](rules/t1218_system_binary_proxy_execution/tier1_cmstp_msiexec_proxy_execution.yml) | 1 | High | process_creation | Medium |
+| [LOLBin Network Connection](rules/t1218_system_binary_proxy_execution/tier2_lolbin_unusual_network_connection.yml) | 2 | High | sysmon (3) | High |
+
 ### Tiering Strategy
 
 - **Tier 1**: High-confidence, broad-coverage rules. Deploy immediately with minimal tuning.
@@ -322,6 +397,9 @@ Rules use extended tags to encode detection quality dimensions:
 | Sysmon DriverLoad | 6 | Vulnerable driver load detection |
 | Windows Security Account Mgmt | 4720/4732 | Local account creation / group add |
 | BITS Client | 3 | BITS job creation monitoring |
+| Security Token Adjustment | 4703 | Token privilege adjustment |
+| Security Event Log Cleared | 1102 | Event log clearing detection |
+| Sysmon FileCreateTimeChanged | 2 | Timestomping detection |
 
 ## References
 
@@ -342,6 +420,11 @@ Rules use extended tags to encode detection quality dimensions:
 - [MITRE ATT&CK T1136.001](https://attack.mitre.org/techniques/T1136/001/)
 - [MITRE ATT&CK T1197](https://attack.mitre.org/techniques/T1197/)
 - [MITRE ATT&CK T1068](https://attack.mitre.org/techniques/T1068/)
+- [MITRE ATT&CK T1134](https://attack.mitre.org/techniques/T1134/)
+- [MITRE ATT&CK T1546.011](https://attack.mitre.org/techniques/T1546/011/)
+- [MITRE ATT&CK T1070.004](https://attack.mitre.org/techniques/T1070/004/)
+- [MITRE ATT&CK T1027](https://attack.mitre.org/techniques/T1027/)
+- [MITRE ATT&CK T1218](https://attack.mitre.org/techniques/T1218/)
 - [SigmaHQ](https://github.com/SigmaHQ/sigma)
 - [Elastic detection-rules](https://github.com/elastic/detection-rules)
 - [Splunk security_content](https://github.com/splunk/security_content)
@@ -363,6 +446,11 @@ Rules use extended tags to encode detection quality dimensions:
 - [T1136.001 Cross-source analysis](docs/t1136_001_cross_source_analysis.md)
 - [T1197 Cross-source analysis](docs/t1197_cross_source_analysis.md)
 - [T1068 Cross-source analysis](docs/t1068_cross_source_analysis.md)
+- [T1134 Cross-source analysis](docs/t1134_cross_source_analysis.md)
+- [T1546.011 Cross-source analysis](docs/t1546_011_cross_source_analysis.md)
+- [T1070.004 Cross-source analysis](docs/t1070_004_cross_source_analysis.md)
+- [T1027 Cross-source analysis](docs/t1027_cross_source_analysis.md)
+- [T1218 Cross-source analysis](docs/t1218_cross_source_analysis.md)
 
 ## Author
 

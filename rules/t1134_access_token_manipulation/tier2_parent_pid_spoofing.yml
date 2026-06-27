@@ -1,0 +1,88 @@
+title: Parent PID Spoofing via Token Manipulation
+id: f7c3d9a1-1703-4de0-b8c7-unified-t1134
+related:
+    - id: c3d4e5f6-7a8b-9c0d-1e2f-3a4b5c6d7e8f  # Elastic PPID spoofing
+      type: derived
+status: test
+description: |
+    Detects potential Parent PID (PPID) spoofing where a process claims a
+    parent that does not match the actual creator. This technique uses
+    PROC_THREAD_ATTRIBUTE_PARENT_PROCESS to create processes under a
+    different parent, often to evade detection rules based on parent-child
+    relationships. Sysmon EventID 1 records both ParentProcessId and the
+    actual creator process.
+    Unified from:
+    - Elastic defense_evasion_ppid_spoofing.toml
+    - SigmaHQ sysmon_ppid_spoofing.yml
+    - Splunk ESCU (Parent PID Spoofing)
+references:
+    - https://attack.mitre.org/techniques/T1134/004/
+    - https://blog.didierstevens.com/2009/11/22/quickpost-selectmyparent-or-playing-with-the-parent-process/
+author: Yuhei Tanaka (Unified from Elastic, SigmaHQ, Splunk)
+date: 2026/06/28
+tags:
+    - attack.defense_evasion
+    - attack.privilege_escalation
+    - attack.t1134
+    - attack.t1134.004
+    - x-source.elastic-detection-rules
+    - x-source.sigmahq
+    - x-source.splunk-escu
+    - x-evasion-resistance.high
+    - x-drs.ed-log-evasion-resistance
+    - x-log-requirement.sysmon-process-creation-1
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    # Explorer.exe should only be spawned by userinit.exe or itself
+    selection_explorer_spoofed:
+        Image|endswith: '\explorer.exe'
+        ParentImage|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\rundll32.exe'
+            - '\regsvr32.exe'
+            - '\mshta.exe'
+
+    # svchost.exe should only have services.exe as parent
+    selection_svchost_spoofed:
+        Image|endswith: '\svchost.exe'
+        ParentImage|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\explorer.exe'
+            - '\rundll32.exe'
+
+    # RuntimeBroker should be spawned by svchost
+    selection_runtimebroker_spoofed:
+        Image|endswith: '\RuntimeBroker.exe'
+        ParentImage|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+
+    # dllhost.exe should only have svchost.exe as parent
+    selection_dllhost_spoofed:
+        Image|endswith: '\dllhost.exe'
+        ParentImage|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\explorer.exe'
+
+    # taskhostw.exe should have svchost.exe as parent
+    selection_taskhostw_spoofed:
+        Image|endswith: '\taskhostw.exe'
+        ParentImage|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+
+    condition: 1 of selection_*
+falsepositives:
+    - Debugging or development scenarios
+    - Containerization or sandboxing tools creating processes with custom parents
+level: critical

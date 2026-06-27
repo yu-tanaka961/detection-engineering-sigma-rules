@@ -1,0 +1,66 @@
+title: Application Shim Database Installation via sdbinst.exe
+id: f7c3d9a1-1801-4de0-b8c7-unified-t1546011
+related:
+    - id: d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a  # SigmaHQ sdbinst
+      type: derived
+status: test
+description: |
+    Detects installation of application compatibility shim databases using
+    sdbinst.exe. Adversaries can create custom shim databases (.sdb files)
+    to inject DLLs, redirect execution, or disable security features for
+    targeted applications. This is a persistence and privilege escalation
+    technique that survives reboots.
+    Unified from:
+    - SigmaHQ proc_creation_win_sdbinst_susp.yml
+    - Elastic persistence_application_shimming.toml
+    - Splunk ESCU (Application Shimming)
+    - Azure Sentinel (Shim Database Installation)
+references:
+    - https://attack.mitre.org/techniques/T1546/011/
+    - https://www.mandiant.com/resources/blog/fin7-shim-databases-persistence
+author: Yuhei Tanaka (Unified from SigmaHQ, Elastic, Splunk, Sentinel)
+date: 2026/06/28
+tags:
+    - attack.persistence
+    - attack.privilege_escalation
+    - attack.t1546.011
+    - x-source.sigmahq
+    - x-source.elastic-detection-rules
+    - x-source.splunk-escu
+    - x-source.azure-sentinel
+    - x-evasion-resistance.medium
+    - x-drs.dq-coverage
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_sdbinst:
+        - Image|endswith: '\sdbinst.exe'
+        - OriginalFileName: 'sdbinst.exe'
+
+    # Installation of shim database
+    selection_install:
+        CommandLine|contains:
+            - '.sdb'
+
+    # Exclude uninstallation (-u flag)
+    filter_uninstall:
+        CommandLine|contains:
+            - '-u'
+            - '/u'
+
+    # SDB files from suspicious locations
+    selection_susp_path:
+        CommandLine|contains:
+            - '\Temp\'
+            - '\AppData\'
+            - '\Users\Public\'
+            - '\Downloads\'
+            - '\Desktop\'
+            - '\ProgramData\'
+
+    condition: selection_sdbinst and selection_install and (not filter_uninstall or selection_susp_path)
+falsepositives:
+    - Legitimate application compatibility fixes deployed by IT
+    - Software vendors providing shim databases for compatibility
+level: high
